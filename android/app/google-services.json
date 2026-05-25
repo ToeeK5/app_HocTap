@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1050931532816",
+    "project_id": "app-hoctap",
+    "storage_bucket": "app-hoctap.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1050931532816:android:b8cb9e2ec46e0d41cb6695",
+        "android_client_info": {
+          "package_name": "com.example.app_hoctap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCySJPIEJhsaAy6d_3FkPw6WuDD4lAdnuY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
