@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 //Import file cấu hình mà FlutterFire tự tạo.
 import 'firebase_options.dart';
+import 'ui/main_screen.dart';
 
 void main() async {
   //Đảm bảo Flutter khởi tạo xong trước khi dùng Firebase.
@@ -21,15 +22,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text("Firebase Demo"),
-        ),
-        body: const Center(
-          child: Text("Firebase Connected"),
-        ),
-      ),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: MainScreen(),
     );
   }
 }

@@ -64,6 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1050931532816',
     projectId: 'app-hoctap',
     storageBucket: 'app-hoctap.firebasestorage.app',
+    iosClientId: '1050931532816-10p0uh5utnl0m302i3i5n8fq9a057e8t.apps.googleusercontent.com',
     iosBundleId: 'com.example.appHoctap',
   );
 
@@ -73,6 +74,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1050931532816',
     projectId: 'app-hoctap',
     storageBucket: 'app-hoctap.firebasestorage.app',
+    iosClientId: '1050931532816-10p0uh5utnl0m302i3i5n8fq9a057e8t.apps.googleusercontent.com',
     iosBundleId: 'com.example.appHoctap',
   );
 
