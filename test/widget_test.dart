@@ -7,7 +7,7 @@ void main() {
     await tester.pumpWidget(const MyApp());
     await tester.pump();
 
-    expect(find.text('QUAN LY HOC TAP'), findsOneWidget);
-    expect(find.text('DANG NHAP'), findsOneWidget);
+    expect(find.text('QUẢN LÝ HỌC TẬP'), findsOneWidget);
+    expect(find.text('ĐĂNG NHẬP'), findsOneWidget);
   });
 }

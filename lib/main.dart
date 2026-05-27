@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget{
  Widget build(BuildContext context){
   return MaterialApp(
    debugShowCheckedModeBanner:false,
-   title:"Quan Ly Hoc Tap",
+   title:"Quản Lý Học Tập",
    theme:ThemeData(useMaterial3:true,scaffoldBackgroundColor:ThemeApp.mauNen),
    initialRoute:"/login",
    onGenerateRoute:(settings){

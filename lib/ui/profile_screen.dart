@@ -41,21 +41,21 @@ class _ProfileScreenState extends State<ProfileScreen>{
       children:[
        const CircleAvatar(radius:48,backgroundColor:ThemeApp.mauPhu,child:Icon(Icons.person_rounded,size:58,color:ThemeApp.mauIcon)),
        const SizedBox(height:12),
-       Text(sinhVien?.hoTen ?? "Sinh vien",style:const TextStyle(fontSize:23,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
+       Text(sinhVien?.hoTen ?? "Sinh viên",style:const TextStyle(fontSize:23,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
        const SizedBox(height:4),
        Text(sinhVien?.email ?? "",style:const TextStyle(color:ThemeApp.chuPhu)),
        const SizedBox(height:18),
 
        Row(children:[
-        Expanded(child:StatCard(title:"Diem TB /10",value:"$gpa10",icon:Icons.star_rounded)),
+        Expanded(child:StatCard(title:"Điểm TB /10",value:"$gpa10",icon:Icons.star_rounded)),
         const SizedBox(width:12),
         Expanded(child:StatCard(title:"GPA /4",value:"$gpa4",icon:Icons.school_rounded)),
        ]),
        const SizedBox(height:12),
        Row(children:[
-        Expanded(child:StatCard(title:"Tong tin",value:"$tongTin",icon:Icons.confirmation_number_rounded)),
+        Expanded(child:StatCard(title:"Tổng tín chỉ",value:"$tongTin",icon:Icons.confirmation_number_rounded)),
         const SizedBox(width:12),
-        Expanded(child:StatCard(title:"Hoc ky",value:"${sinhVien?.hocKyHienTai ?? 0}",icon:Icons.calendar_month_rounded)),
+        Expanded(child:StatCard(title:"Học kỳ",value:"${sinhVien?.hocKyHienTai ?? 0}",icon:Icons.calendar_month_rounded)),
        ]),
        const SizedBox(height:12),
 
@@ -66,7 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen>{
         child:Row(
          mainAxisAlignment:MainAxisAlignment.spaceBetween,
          children:[
-          const Text("Xep loai hoc luc",style:TextStyle(fontSize:16,color:ThemeApp.chuPhu)),
+          const Text("Xếp loại học lực",style:TextStyle(fontSize:16,color:ThemeApp.chuPhu)),
           Text(xepLoai,style:TextStyle(fontSize:22,fontWeight:FontWeight.bold,color:MauHocTap.mauHocLuc(xepLoai))),
          ],
         ),
@@ -79,12 +79,12 @@ class _ProfileScreenState extends State<ProfileScreen>{
         child:Column(
          crossAxisAlignment:CrossAxisAlignment.start,
          children:[
-          const Text("Bieu do diem mon hoc",style:TextStyle(fontSize:18,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
+          const Text("Biểu đồ điểm môn học",style:TextStyle(fontSize:18,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
           const SizedBox(height:12),
           Row(children:[
-           Expanded(child:_nutChon("Hinh tron",dangTron,()=>setState(()=>dangTron=true))),
+           Expanded(child:_nutChon("Hình tròn",dangTron,()=>setState(()=>dangTron=true))),
            const SizedBox(width:10),
-           Expanded(child:_nutChon("Cot",!dangTron,()=>setState(()=>dangTron=false))),
+           Expanded(child:_nutChon("Cột",!dangTron,()=>setState(()=>dangTron=false))),
           ]),
           const SizedBox(height:16),
           BieuDoDiem(ds:dsDiem,dangTron:dangTron),
@@ -101,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen>{
           Navigator.pushNamedAndRemoveUntil(context,"/login",(route)=>false);
          },
          icon:const Icon(Icons.logout_rounded),
-         label:const Text("Dang xuat"),
+         label:const Text("Đăng xuất"),
         ),
        ),
        SizedBox(
@@ -109,7 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen>{
         child:TextButton.icon(
          onPressed:()=>SystemNavigator.pop(),
          icon:const Icon(Icons.close_rounded),
-         label:const Text("Thoat app"),
+         label:const Text("Thoát app"),
         ),
        ),
       ],

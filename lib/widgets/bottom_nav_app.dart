@@ -22,9 +22,9 @@ class BottomNavApp extends StatelessWidget{
     if(index==3)Navigator.pushReplacementNamed(context,"/profile");
    },
    items:const[
-    BottomNavigationBarItem(icon:Icon(Icons.home_rounded),label:"Home"),
-    BottomNavigationBarItem(icon:Icon(Icons.calendar_month_rounded),label:"Lich"),
-    BottomNavigationBarItem(icon:Icon(Icons.bar_chart_rounded),label:"Diem"),
+    BottomNavigationBarItem(icon:Icon(Icons.home_rounded),label:"Trang chủ"),
+    BottomNavigationBarItem(icon:Icon(Icons.calendar_month_rounded),label:"Lịch"),
+    BottomNavigationBarItem(icon:Icon(Icons.bar_chart_rounded),label:"Điểm"),
     BottomNavigationBarItem(icon:Icon(Icons.person_rounded),label:"Profile"),
    ],
   );

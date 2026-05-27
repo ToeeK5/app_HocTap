@@ -33,14 +33,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>{
 
  void xacNhan(){
   if(taiKhoanController.text.trim().isEmpty||emailController.text.trim().isEmpty){
-   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Vui long nhap day du thong tin")));
+   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Vui lòng nhập đầy đủ thông tin")));
    return;
   }
 
   final tk=authService.kiemTraQuenMatKhau(taiKhoanController.text,emailController.text);
 
   if(tk==null){
-   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Tai khoan hoac email khong dung")));
+   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Tài khoản hoặc email không đúng")));
    return;
   }
 
@@ -51,7 +51,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>{
  Widget build(BuildContext context){
   return Scaffold(
    backgroundColor:ThemeApp.mauNen,
-   appBar:AppBar(title:const Text("Quen mat khau"),backgroundColor:ThemeApp.mauNen,foregroundColor:ThemeApp.chuDam,elevation:0),
+   appBar:AppBar(title:const Text("Quên mật khẩu"),backgroundColor:ThemeApp.mauNen,foregroundColor:ThemeApp.chuDam,elevation:0),
    body:SafeArea(
     child:SingleChildScrollView(
      padding:const EdgeInsets.all(24),
@@ -64,20 +64,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>{
         child:const Icon(Icons.lock_reset_rounded,size:55,color:ThemeApp.mauIcon),
        ),
        const SizedBox(height:20),
-       const Text("Xac minh tai khoan",style:TextStyle(fontSize:25,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
+       const Text("Xác minh tài khoản",style:TextStyle(fontSize:25,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
        const SizedBox(height:8),
-       const Text("Nhap tai khoan va email de doi mat khau",textAlign:TextAlign.center,style:TextStyle(color:ThemeApp.chuPhu)),
+       const Text("Nhập tài khoản và email để đổi mật khẩu",textAlign:TextAlign.center,style:TextStyle(color:ThemeApp.chuPhu)),
        const SizedBox(height:30),
-       TextField(controller:taiKhoanController,decoration:oNhap("Nhap tai khoan",Icons.person_rounded)),
+       TextField(controller:taiKhoanController,decoration:oNhap("Nhập tài khoản",Icons.person_rounded)),
        const SizedBox(height:16),
-       TextField(controller:emailController,keyboardType:TextInputType.emailAddress,decoration:oNhap("Nhap email",Icons.email_rounded)),
+       TextField(controller:emailController,keyboardType:TextInputType.emailAddress,decoration:oNhap("Nhập email",Icons.email_rounded)),
        const SizedBox(height:30),
        SizedBox(
         width:double.infinity,height:56,
         child:ElevatedButton(
          onPressed:xacNhan,
          style:ElevatedButton.styleFrom(backgroundColor:ThemeApp.mauChinh,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18))),
-         child:const Text("XAC NHAN",style:TextStyle(color:Colors.white,fontWeight:FontWeight.bold,fontSize:17)),
+         child:const Text("XÁC NHẬN",style:TextStyle(color:Colors.white,fontWeight:FontWeight.bold,fontSize:17)),
         ),
        ),
       ],

@@ -41,7 +41,7 @@ class _DiemScreenState extends State<DiemScreen>{
   return Scaffold(
    backgroundColor:ThemeApp.mauNen,
    appBar:AppBar(
-    title:const Text("Diem hoc tap"),
+    title:const Text("Điểm học tập"),
     backgroundColor:ThemeApp.mauNen,
     foregroundColor:ThemeApp.chuDam,
     elevation:0,
@@ -54,9 +54,9 @@ class _DiemScreenState extends State<DiemScreen>{
       children:[
        Row(
         children:[
-         Expanded(child:_theTongKet("Tong tin", "$tongTin", Icons.confirmation_number_rounded)),
+         Expanded(child:_theTongKet("Tổng tín chỉ", "$tongTin", Icons.confirmation_number_rounded)),
          const SizedBox(width:12),
-         Expanded(child:_theTongKet("Diem TB /10", "$gpa10", Icons.star_rounded)),
+         Expanded(child:_theTongKet("Điểm TB /10", "$gpa10", Icons.star_rounded)),
         ],
        ),
 
@@ -66,7 +66,7 @@ class _DiemScreenState extends State<DiemScreen>{
         controller:timController,
         onChanged:(value)=>setState((){}),
         decoration:InputDecoration(
-         hintText:"Tim mon hoc",
+         hintText:"Tìm môn học",
          prefixIcon:const Icon(Icons.search_rounded,color:ThemeApp.mauIcon),
          filled:true,
          fillColor:Colors.white,
@@ -77,7 +77,7 @@ class _DiemScreenState extends State<DiemScreen>{
        const SizedBox(height:18),
 
        const Text(
-        "Danh sach mon hoc",
+        "Danh sách môn học",
         style:TextStyle(fontSize:19,fontWeight:FontWeight.bold,color:ThemeApp.chuDam),
        ),
 
@@ -87,7 +87,7 @@ class _DiemScreenState extends State<DiemScreen>{
         const Center(
          child:Padding(
           padding:EdgeInsets.all(30),
-          child:Text("Khong co mon hoc",style:TextStyle(color:ThemeApp.chuPhu)),
+          child:Text("Không có môn học",style:TextStyle(color:ThemeApp.chuPhu)),
          ),
         ),
 
@@ -149,7 +149,7 @@ class _DiemScreenState extends State<DiemScreen>{
          children:[
           Text(item.monHoc.tenMon,style:const TextStyle(fontSize:17,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
           const SizedBox(height:3),
-          Text("Ma mon: ${item.monHoc.maMon} - ${item.monHoc.soTinChi} tin",style:const TextStyle(color:ThemeApp.chuPhu)),
+          Text("Mã môn: ${item.monHoc.maMon} - ${item.monHoc.soTinChi} tín chỉ",style:const TextStyle(color:ThemeApp.chuPhu)),
          ],
         ),
        ),
@@ -165,11 +165,11 @@ class _DiemScreenState extends State<DiemScreen>{
 
      Row(
       children:[
-       Expanded(child:_oDiem("Giua ky", item.diem.diemGiuaKy.toStringAsFixed(1))),
+       Expanded(child:_oDiem("Giữa kỳ", item.diem.diemGiuaKy.toStringAsFixed(1))),
        const SizedBox(width:10),
-       Expanded(child:_oDiem("Cuoi ky", item.diem.diemCuoiKy.toStringAsFixed(1))),
+       Expanded(child:_oDiem("Cuối kỳ", item.diem.diemCuoiKy.toStringAsFixed(1))),
        const SizedBox(width:10),
-       Expanded(child:_oDiem("Tong", item.diemTongKet.toStringAsFixed(1))),
+       Expanded(child:_oDiem("Tổng", item.diemTongKet.toStringAsFixed(1))),
       ],
      ),
     ],

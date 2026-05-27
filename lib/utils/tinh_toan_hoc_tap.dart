@@ -29,9 +29,9 @@ class TinhToanHocTap{
  }
 
  static String xepLoaiHocLuc(double gpa10){
-  if(gpa10>=8.5)return "Gioi";
-  if(gpa10>=7.0)return "Kha";
-  if(gpa10>=5.0)return "Trung binh";
-  return "Yeu";
+  if(gpa10>=8.5)return "Giỏi";
+  if(gpa10>=7.0)return "Khá";
+  if(gpa10>=5.0)return "Trung bình";
+  return "Yếu";
  }
 }

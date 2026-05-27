@@ -38,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen>{
   final tk=authService.dangNhap(taiKhoanController.text,matKhauController.text);
 
   if(tk==null){
-   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Sai tai khoan hoac mat khau")));
+   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Sai tài khoản hoặc mật khẩu")));
    return;
   }
 
@@ -67,18 +67,18 @@ class _LoginScreenState extends State<LoginScreen>{
         child:const Icon(Icons.school_rounded,size:62,color:ThemeApp.mauIcon),
        ),
        const SizedBox(height:25),
-       const Text("QUAN LY HOC TAP",style:TextStyle(fontSize:28,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
-       const Text("SINH VIEN CA NHAN",style:TextStyle(fontSize:18,fontWeight:FontWeight.w600,color:ThemeApp.mauChinh)),
+       const Text("QUẢN LÝ HỌC TẬP",style:TextStyle(fontSize:28,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
+       const Text("SINH VIÊN CÁ NHÂN",style:TextStyle(fontSize:18,fontWeight:FontWeight.w600,color:ThemeApp.mauChinh)),
        const SizedBox(height:10),
-       const Text("Dang nhap de tiep tuc",style:TextStyle(color:ThemeApp.chuPhu)),
+       const Text("Đăng nhập để tiếp tục",style:TextStyle(color:ThemeApp.chuPhu)),
        const SizedBox(height:35),
-       TextField(controller:taiKhoanController,decoration:oNhap(hint:"Nhap tai khoan",icon:Icons.person_rounded)),
+       TextField(controller:taiKhoanController,decoration:oNhap(hint:"Nhập tài khoản",icon:Icons.person_rounded)),
        const SizedBox(height:18),
        TextField(
         controller:matKhauController,
         obscureText:!hienMK,
         decoration:oNhap(
-         hint:"Nhap mat khau",
+         hint:"Nhập mật khẩu",
          icon:Icons.lock_rounded,
          suffix:IconButton(
           onPressed:()=>setState(()=>hienMK=!hienMK),
@@ -92,11 +92,11 @@ class _LoginScreenState extends State<LoginScreen>{
         child:ElevatedButton(
          onPressed:xuLyDangNhap,
          style:ElevatedButton.styleFrom(backgroundColor:ThemeApp.mauChinh,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18))),
-         child:const Text("DANG NHAP",style:TextStyle(fontSize:18,color:Colors.white,fontWeight:FontWeight.bold)),
+         child:const Text("ĐĂNG NHẬP",style:TextStyle(fontSize:18,color:Colors.white,fontWeight:FontWeight.bold)),
         ),
        ),
        const SizedBox(height:14),
-       TextButton(onPressed:()=>Navigator.pushNamed(context,"/forgot-password"),child:const Text("Quen mat khau?")),
+       TextButton(onPressed:()=>Navigator.pushNamed(context,"/forgot-password"),child:const Text("Quên mật khẩu?")),
        const SizedBox(height:12),
        const Text("Version 1.0",style:TextStyle(color:ThemeApp.chuPhu)),
       ],

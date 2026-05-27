@@ -39,7 +39,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>{
  void doiMatKhau(){
   final arguments=ModalRoute.of(context)?.settings.arguments;
   if(arguments is! String || arguments.trim().isEmpty){
-   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Khong tim thay tai khoan can doi mat khau")));
+   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Không tìm thấy tài khoản cần đổi mật khẩu")));
    Navigator.pushNamedAndRemoveUntil(context,"/forgot-password",(route)=>false);
    return;
   }
@@ -49,27 +49,27 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>{
   final xacNhan=xacNhanController.text.trim();
 
   if(mk.isEmpty||xacNhan.isEmpty){
-   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Vui long nhap day du mat khau")));
+   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Vui lòng nhập đầy đủ mật khẩu")));
    return;
   }
 
   if(mk.length<3){
-   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Mat khau phai tu 3 ky tu")));
+   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Mật khẩu phải từ 3 ký tự")));
    return;
   }
 
   if(mk!=xacNhan){
-   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Mat khau xac nhan khong khop")));
+   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Mật khẩu xác nhận không khớp")));
    return;
   }
 
   final ok=authService.doiMatKhau(maTK,mk);
 
   if(ok){
-   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Doi mat khau thanh cong")));
+   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Đổi mật khẩu thành công")));
    Navigator.pushNamedAndRemoveUntil(context,"/login",(route)=>false);
   }else{
-   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Khong doi duoc mat khau")));
+   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Không đổi được mật khẩu")));
   }
  }
 
@@ -77,7 +77,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>{
  Widget build(BuildContext context){
   return Scaffold(
    backgroundColor:ThemeApp.mauNen,
-   appBar:AppBar(title:const Text("Doi mat khau"),backgroundColor:ThemeApp.mauNen,foregroundColor:ThemeApp.chuDam,elevation:0),
+   appBar:AppBar(title:const Text("Đổi mật khẩu"),backgroundColor:ThemeApp.mauNen,foregroundColor:ThemeApp.chuDam,elevation:0),
    body:SafeArea(
     child:SingleChildScrollView(
      padding:const EdgeInsets.all(24),
@@ -90,20 +90,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>{
         child:const Icon(Icons.password_rounded,size:55,color:ThemeApp.mauIcon),
        ),
        const SizedBox(height:20),
-       const Text("Tao mat khau moi",style:TextStyle(fontSize:25,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
+       const Text("Tạo mật khẩu mới",style:TextStyle(fontSize:25,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
        const SizedBox(height:8),
-       const Text("Nhap va xac nhan lai mat khau moi",style:TextStyle(color:ThemeApp.chuPhu)),
+       const Text("Nhập và xác nhận lại mật khẩu mới",style:TextStyle(color:ThemeApp.chuPhu)),
        const SizedBox(height:30),
-       TextField(controller:matKhauMoiController,obscureText:!hienMK,decoration:oNhap("Nhap mat khau moi")),
+       TextField(controller:matKhauMoiController,obscureText:!hienMK,decoration:oNhap("Nhập mật khẩu mới")),
        const SizedBox(height:16),
-       TextField(controller:xacNhanController,obscureText:!hienMK,decoration:oNhap("Xac nhan mat khau")),
+       TextField(controller:xacNhanController,obscureText:!hienMK,decoration:oNhap("Xác nhận mật khẩu")),
        const SizedBox(height:30),
        SizedBox(
         width:double.infinity,height:56,
         child:ElevatedButton(
          onPressed:doiMatKhau,
          style:ElevatedButton.styleFrom(backgroundColor:ThemeApp.mauChinh,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(18))),
-         child:const Text("LUU MAT KHAU",style:TextStyle(color:Colors.white,fontWeight:FontWeight.bold,fontSize:17)),
+         child:const Text("LƯU MẬT KHẨU",style:TextStyle(color:Colors.white,fontWeight:FontWeight.bold,fontSize:17)),
         ),
        ),
       ],
