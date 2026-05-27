@@ -37,12 +37,14 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
             monHoc.maMon.toLowerCase().contains(_searchQuery.toLowerCase()) ||
             monHoc.tenMon.toLowerCase().contains(_searchQuery.toLowerCase());
 
+        // Logic lọc theo loại môn học (bắt buộc hoặc tự chọn) > 2 tín chỉ là bắt buộc, 
+        //<= 2 tín chỉ là tự chọn
         final matchesSubjectType =
             _selectedSubjectType.isEmpty ||
             (_selectedSubjectType == 'mandatory' &&
-                monHoc.soTinChi > 2) || // Example logic, adjust as needed
+                monHoc.soTinChi > 2) || 
             (_selectedSubjectType == 'elective' &&
-                monHoc.soTinChi <= 2); // Example logic, adjust as needed
+                monHoc.soTinChi <= 2); 
 
         return matchesSearchQuery && matchesSubjectType;
       }).toList();

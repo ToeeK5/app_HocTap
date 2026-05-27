@@ -176,9 +176,9 @@ class AppData {
     // --- TÀI KHOẢN SINH VIÊN 1 ---
     TaiKhoan(
       maTK: 'TK001',
-      maSV: '20120001',       // Đổi mã sinh viên sang số mới
-      tenDangNhap: 'SV001',   // Giữ nguyên
-      matKhau: 'SV001',       // Giữ nguyên
+      maSV: '20120001',       
+      tenDangNhap: 'SV001',   
+      matKhau: 'SV001',       
       vaiTro: 'sinhvien',
     ),
 

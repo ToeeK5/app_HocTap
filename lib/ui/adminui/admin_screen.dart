@@ -33,7 +33,7 @@ class _AdminScreenState extends State<AdminScreen> {
       const NhapDiemScreen(), // Trang Nhập điểm sinh viên (Index 1)
       const Center(child: Text('Báo cáo thống kê')), // Trang Báo cáo thống kê (Index 2 - giả định)
       const Center(child: Text('Cài đặt hệ thống')), // Trang Cài đặt hệ
-      //const LoginScreen(), // Trang Đăng xuất (Index 4 - giả định)
+      const LoginScreen(), // Trang Đăng xuất (Index 4 - giả định)
     ];
   }
 
@@ -182,8 +182,38 @@ class _AdminScreenState extends State<AdminScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: () {
-          if (isError) {
-            // Xử lý sự kiện khi nhấn Đăng xuất tại đây
+          if (isError && label == 'Đăng xuất') {
+            // Hiển thị hộp thoại xác nhận trước khi thoát (Tùy chọn - Giúp UX tốt hơn)
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Xác nhận đăng xuất'),
+                  content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi hệ thống không?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context), // Đóng dialog nếu hủy
+                      child: const Text('Hủy'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // 1. Đóng dialog xác nhận
+                        Navigator.pop(context); 
+                        
+                        // 2. Điều hướng xóa toàn bộ các screen cũ và chuyển về LoginScreen
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          (Route<dynamic> route) => false, // Xóa sạch bộ nhớ stack điều hướng
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: _errorRed),
+                      child: const Text('Đăng xuất', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                );
+              },
+            );
             return;
           }
           // Chỉ chuyển trang cho các tab có view thực tế (0 và 1)
