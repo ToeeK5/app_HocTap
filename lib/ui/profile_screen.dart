@@ -33,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen>{
 
   return Scaffold(
    backgroundColor:ThemeApp.mauNen,
-   appBar:AppBar(title:const Text("Profile"),backgroundColor:ThemeApp.mauNen,foregroundColor:ThemeApp.chuDam,elevation:0),
+   appBar:AppBar(automaticallyImplyLeading:false,title:const Text("Trang cá nhân"),backgroundColor:ThemeApp.mauNen,foregroundColor:ThemeApp.chuDam,elevation:0),
    body:SafeArea(
     child:SingleChildScrollView(
      padding:const EdgeInsets.all(16),
@@ -136,5 +136,8 @@ class _ProfileScreenState extends State<ProfileScreen>{
   );
  }
 }
+
+
+
 
 

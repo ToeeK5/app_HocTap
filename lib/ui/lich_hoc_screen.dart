@@ -42,7 +42,7 @@ class _LichHocScreenState extends State<LichHocScreen> {
 
     return Scaffold(
       backgroundColor: ThemeApp.mauNen,
-      appBar: AppBar(
+      appBar: AppBar(automaticallyImplyLeading:false,
         title: const Text('Lịch học'),
         backgroundColor: ThemeApp.mauNen,
         foregroundColor: ThemeApp.chuDam,
@@ -326,3 +326,6 @@ class _EmptyBox extends StatelessWidget {
     );
   }
 }
+
+
+

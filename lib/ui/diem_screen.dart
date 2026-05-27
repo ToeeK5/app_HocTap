@@ -40,7 +40,7 @@ class _DiemScreenState extends State<DiemScreen>{
 
   return Scaffold(
    backgroundColor:ThemeApp.mauNen,
-   appBar:AppBar(
+   appBar:AppBar(automaticallyImplyLeading:false,
     title:const Text("Điểm học tập"),
     backgroundColor:ThemeApp.mauNen,
     foregroundColor:ThemeApp.chuDam,
@@ -191,4 +191,7 @@ class _DiemScreenState extends State<DiemScreen>{
   );
  }
 }
+
+
+
 
