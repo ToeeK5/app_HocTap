@@ -1,5 +1,5 @@
-import '../data/app_data.dart';
-import '../models/tai_khoan.dart';
+import '../../data/app_data.dart';
+import '../../models/tai_khoan.dart';
 
 class AuthService{
  // NOTE FIREBASE:

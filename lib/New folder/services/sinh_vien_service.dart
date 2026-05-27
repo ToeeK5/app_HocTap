@@ -1,5 +1,5 @@
-import '../data/app_data.dart';
-import '../models/sinh_vien.dart';
+import '../../data/app_data.dart';
+import '../../models/sinh_vien.dart';
 
 class SinhVienService{
  // NOTE FIREBASE:

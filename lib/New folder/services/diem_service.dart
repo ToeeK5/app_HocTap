@@ -1,6 +1,6 @@
-import '../data/app_data.dart';
-import '../models/diem.dart';
-import '../models/mon_hoc.dart';
+import '../../data/app_data.dart';
+import '../../models/diem.dart';
+import '../../models/mon_hoc.dart';
 
 class DiemMonHienThi{
  final Diem diem;
