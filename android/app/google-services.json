@@ -12,7 +12,12 @@
           "package_name": "com.example.app_hoctap"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1050931532816-1dci592801542meel0tai9jjrlcqvs5m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCySJPIEJhsaAy6d_3FkPw6WuDD4lAdnuY"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1050931532816-1dci592801542meel0tai9jjrlcqvs5m.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1050931532816-10p0uh5utnl0m302i3i5n8fq9a057e8t.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.appHoctap"
+              }
+            }
+          ]
         }
       }
     }
