@@ -5,7 +5,7 @@ import 'ui/home_screen.dart';
 import 'ui/lich_hoc_screen.dart';
 import 'ui/diem_screen.dart';
 import 'ui/profile_screen.dart';
-import 'ui/admin_screen.dart';
+import 'package:app_hoctap/ui/adminui/admin_screen.dart';
 import 'ui/forgot_password_screen.dart';
 import 'ui/reset_password_screen.dart';
 import 'utils/theme_app.dart';
