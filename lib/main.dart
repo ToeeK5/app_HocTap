@@ -9,9 +9,20 @@ import 'package:app_hoctap/ui/adminui/admin_screen.dart';
 import 'ui/forgot_password_screen.dart';
 import 'ui/reset_password_screen.dart';
 import 'utils/theme_app.dart';
+import 'firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main(){
- runApp(const MyApp());
+
+void main() async {
+  // 1. Dòng này bắt buộc phải có để đảm bảo Flutter đã sẵn sàng
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 2. Dòng này khởi tạo Firebase bằng cấu hình tự động từ bước 1
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget{
