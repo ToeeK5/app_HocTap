@@ -16,33 +16,24 @@ class LichHocScreen extends StatefulWidget {
 class _LichHocScreenState extends State<LichHocScreen> {
   int? hocKyDangChon;
   bool chiHomNay = false;
+  late Future<List<LichHocHienThi>> _dsTatCaFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final maSV = SessionService.layMaSV();
+    _dsTatCaFuture = LichHocService().layLichTheoSinhVien(maSV);
+  }
 
   @override
   Widget build(BuildContext context) {
     final maSV = SessionService.layMaSV();
     final sinhVien = SinhVienService().laySinhVienTheoMa(maSV);
-    final service = LichHocService();
-    final dsTatCa = service.layLichTheoSinhVien(maSV);
-    final dsHocKy = _danhSachHocKy(dsTatCa, sinhVien?.hocKyHienTai);
-    final hocKy = hocKyDangChon ??
-        sinhVien?.hocKyHienTai ??
-        (dsHocKy.isEmpty ? null : dsHocKy.first);
-
-    var dsHienThi = dsTatCa;
-    if (hocKy != null) {
-      dsHienThi = dsHienThi.where((item) => item.monHoc.hocKy == hocKy).toList();
-    }
-    if (chiHomNay) {
-      final thuHomNay = service.tenThu(DateTime.now().weekday);
-      dsHienThi = dsHienThi
-          .where((item) => item.lichHoc.thu == thuHomNay)
-          .toList();
-    }
-    dsHienThi = service.sapXepLich(dsHienThi);
 
     return Scaffold(
       backgroundColor: ThemeApp.mauNen,
-      appBar: AppBar(automaticallyImplyLeading:false,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Lịch học'),
         backgroundColor: ThemeApp.mauNen,
         foregroundColor: ThemeApp.chuDam,
@@ -61,27 +52,73 @@ class _LichHocScreenState extends State<LichHocScreen> {
                 hocKy: sinhVien?.hocKyHienTai ?? 0,
               ),
               const SizedBox(height: 16),
-              _BoLoc(
-                hocKyDangChon: hocKy,
-                danhSachHocKy: dsHocKy,
-                chiHomNay: chiHomNay,
-                onChonHocKy: (value) => setState(() => hocKyDangChon = value),
-                onDoiHomNay: (value) => setState(() => chiHomNay = value),
+              FutureBuilder<List<LichHocHienThi>>(
+                future: _dsTatCaFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return _EmptyBox(
+                      text: 'Lỗi khi tải lịch: ${snapshot.error}',
+                    );
+                  }
+
+                  final dsTatCa = snapshot.data ?? <LichHocHienThi>[];
+                  final dsHocKy = _danhSachHocKy(
+                    dsTatCa,
+                    sinhVien?.hocKyHienTai,
+                  );
+                  final hocKy =
+                      hocKyDangChon ??
+                      sinhVien?.hocKyHienTai ??
+                      (dsHocKy.isEmpty ? null : dsHocKy.first);
+
+                  var dsHienThi = dsTatCa;
+                  if (hocKy != null) {
+                    dsHienThi = dsHienThi
+                        .where((item) => item.monHoc.hocKy == hocKy)
+                        .toList();
+                  }
+                  if (chiHomNay) {
+                    final thuHomNay = LichHocService().tenThu(
+                      DateTime.now().weekday,
+                    );
+                    dsHienThi = dsHienThi
+                        .where((item) => item.lichHoc.thu == thuHomNay)
+                        .toList();
+                  }
+                  dsHienThi = LichHocService().sapXepLich(dsHienThi);
+
+                  return Column(
+                    children: [
+                      _BoLoc(
+                        hocKyDangChon: hocKy,
+                        danhSachHocKy: dsHocKy,
+                        chiHomNay: chiHomNay,
+                        onChonHocKy: (value) =>
+                            setState(() => hocKyDangChon = value),
+                        onDoiHomNay: (value) =>
+                            setState(() => chiHomNay = value),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        chiHomNay ? 'Lịch học hôm nay' : 'Lịch học trong tuần',
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                          color: ThemeApp.chuDam,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      if (dsHienThi.isEmpty)
+                        const _EmptyBox(text: 'Không có lịch học phù hợp')
+                      else
+                        ...dsHienThi.map((item) => _LichHocCard(item: item)),
+                    ],
+                  );
+                },
               ),
-              const SizedBox(height: 18),
-              Text(
-                chiHomNay ? 'Lịch học hôm nay' : 'Lịch học trong tuần',
-                style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: ThemeApp.chuDam,
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (dsHienThi.isEmpty)
-                const _EmptyBox(text: 'Không có lịch học phù hợp')
-              else
-                ...dsHienThi.map((item) => _LichHocCard(item: item)),
             ],
           ),
         ),
@@ -256,7 +293,10 @@ class _LichHocCard extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const Icon(Icons.calendar_month_rounded, color: ThemeApp.mauIcon),
+                const Icon(
+                  Icons.calendar_month_rounded,
+                  color: ThemeApp.mauIcon,
+                ),
                 const SizedBox(height: 6),
                 Text(
                   lich.thu.replaceFirst('Thứ ', 'T'),
@@ -326,6 +366,3 @@ class _EmptyBox extends StatelessWidget {
     );
   }
 }
-
-
-

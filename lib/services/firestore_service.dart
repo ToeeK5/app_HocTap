@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/sinh_vien.dart';
 import '../models/diem.dart';
 
@@ -21,10 +22,12 @@ class FirestoreService {
     try {
       QuerySnapshot querySnapshot = await _db.collection('sinh_vien').get();
       return querySnapshot.docs
-          .map((doc) => SinhVien.fromFirestore(doc.data() as Map<String, dynamic>))
+          .map(
+            (doc) => SinhVien.fromFirestore(doc.data() as Map<String, dynamic>),
+          )
           .toList();
     } catch (e) {
-      print('Error getting sinh vien: $e');
+      debugPrint('Error getting sinh vien: $e');
       return [];
     }
   }
@@ -37,10 +40,12 @@ class FirestoreService {
           .where('lop', isEqualTo: lop)
           .get();
       return querySnapshot.docs
-          .map((doc) => SinhVien.fromFirestore(doc.data() as Map<String, dynamic>))
+          .map(
+            (doc) => SinhVien.fromFirestore(doc.data() as Map<String, dynamic>),
+          )
           .toList();
     } catch (e) {
-      print('Error getting sinh vien by lop: $e');
+      debugPrint('Error getting sinh vien by lop: $e');
       return [];
     }
   }
@@ -58,7 +63,7 @@ class FirestoreService {
       });
       return true;
     } catch (e) {
-      print('Error adding sinh vien: $e');
+      debugPrint('Error adding sinh vien: $e');
       return false;
     }
   }
@@ -72,7 +77,7 @@ class FirestoreService {
       });
       return true;
     } catch (e) {
-      print('Error updating sinh vien: $e');
+      debugPrint('Error updating sinh vien: $e');
       return false;
     }
   }
@@ -83,7 +88,7 @@ class FirestoreService {
       await _db.collection('sinh_vien').doc(maSV).delete();
       return true;
     } catch (e) {
-      print('Error deleting sinh vien: $e');
+      debugPrint('Error deleting sinh vien: $e');
       return false;
     }
   }
@@ -103,7 +108,7 @@ class FirestoreService {
       }
       return null;
     } catch (e) {
-      print('Error getting diem: $e');
+      debugPrint('Error getting diem: $e');
       return null;
     }
   }
@@ -119,7 +124,7 @@ class FirestoreService {
           .map((doc) => Diem.fromFirestore(doc.data() as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error getting diem by mon hoc: $e');
+      debugPrint('Error getting diem by mon hoc: $e');
       return [];
     }
   }
@@ -137,7 +142,7 @@ class FirestoreService {
       }, SetOptions(merge: true));
       return true;
     } catch (e) {
-      print('Error saving diem: $e');
+      debugPrint('Error saving diem: $e');
       return false;
     }
   }
@@ -146,26 +151,22 @@ class FirestoreService {
   Future<bool> saveBatchDiem(List<Diem> diemList) async {
     try {
       WriteBatch batch = _db.batch();
-      
+
       for (Diem diem in diemList) {
         String docId = '${diem.maSV}_${diem.maMon}';
-        batch.set(
-          _db.collection('diem').doc(docId),
-          {
-            'maSV': diem.maSV,
-            'maMon': diem.maMon,
-            'diemGiuaKy': diem.diemGiuaKy,
-            'diemCuoiKy': diem.diemCuoiKy,
-            'updatedAt': FieldValue.serverTimestamp(),
-          },
-          SetOptions(merge: true),
-        );
+        batch.set(_db.collection('diem').doc(docId), {
+          'maSV': diem.maSV,
+          'maMon': diem.maMon,
+          'diemGiuaKy': diem.diemGiuaKy,
+          'diemCuoiKy': diem.diemCuoiKy,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
       }
-      
+
       await batch.commit();
       return true;
     } catch (e) {
-      print('Error saving batch diem: $e');
+      debugPrint('Error saving batch diem: $e');
       return false;
     }
   }
@@ -175,17 +176,17 @@ class FirestoreService {
     try {
       QuerySnapshot querySnapshot = await _db.collection('sinh_vien').get();
       Set<String> lopSet = {};
-      
+
       for (var doc in querySnapshot.docs) {
         String? lop = doc['lop'];
         if (lop != null && lop.isNotEmpty) {
           lopSet.add(lop);
         }
       }
-      
+
       return lopSet.toList()..sort();
     } catch (e) {
-      print('Error getting danh sach lop: $e');
+      debugPrint('Error getting danh sach lop: $e');
       return [];
     }
   }
@@ -198,9 +199,11 @@ class FirestoreService {
         .collection('sinh_vien')
         .where('lop', isEqualTo: lop)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => SinhVien.fromFirestore(doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => SinhVien.fromFirestore(doc.data()))
+              .toList(),
+        );
   }
 
   /// Stream danh sách điểm theo môn học
@@ -209,8 +212,10 @@ class FirestoreService {
         .collection('diem')
         .where('maMon', isEqualTo: maMon)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Diem.fromFirestore(doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => Diem.fromFirestore(doc.data()))
+              .toList(),
+        );
   }
 }

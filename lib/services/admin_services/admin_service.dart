@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../../models/sinh_vien.dart';
 
 class AdminService {
@@ -21,15 +22,15 @@ class AdminService {
     String? sdt,
   }) async {
     try {
-      print('AdminService: Checking if student with maSV: $maSV exists.');
+      debugPrint('AdminService: Checking if student with maSV: $maSV exists.');
       DocumentSnapshot doc = await _db
           .collection('sinh_vien')
           .doc(maSV)
           .get(const GetOptions(source: Source.server));
-      
-      print('AdminService: doc.exists = ${doc.exists}');
+
+      debugPrint('AdminService: doc.exists = ${doc.exists}');
       if (doc.exists) {
-        print('AdminService: Sinh viên $maSV đã tồn tại!');
+        debugPrint('AdminService: Sinh viên $maSV đã tồn tại!');
         return false; // Chỉ trả về false khi TRÙNG MÃ THỰC SỰ
       }
 
@@ -44,7 +45,7 @@ class AdminService {
       });
       return true;
     } catch (e) {
-      print('Error adding single sinh vien: $e');
+      debugPrint('Error adding single sinh vien: $e');
       // SỬA DÒNG NÀY: Thay vì 'return false;', hãy đổi thành 'rethrow;'
       rethrow; // Ném lỗi này ra màn hình UI xử lý
     }
@@ -64,7 +65,7 @@ class AdminService {
           )
           .toList();
     } catch (e) {
-      print('Error getting sinh vien by lop: $e');
+      debugPrint('Error getting sinh vien by lop: $e');
       return [];
     }
   }
@@ -93,7 +94,7 @@ class AdminService {
       // Lọc sinh viên chưa có điểm
       return allSV.where((sv) => !maSVWithDiem.contains(sv.maSV)).toList();
     } catch (e) {
-      print('Error getting sinh vien without diem: $e');
+      debugPrint('Error getting sinh vien without diem: $e');
       return [];
     }
   }
@@ -151,7 +152,7 @@ class AdminService {
             : '0.0',
       };
     } catch (e) {
-      print('Error getting diem stats: $e');
+      debugPrint('Error getting diem stats: $e');
       return {};
     }
   }
