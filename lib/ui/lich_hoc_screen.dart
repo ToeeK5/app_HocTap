@@ -195,7 +195,7 @@ class _BoLoc extends StatelessWidget {
         children: [
           Expanded(
             child: DropdownButtonFormField<int>(
-              value: hocKyDangChon,
+              initialValue: hocKyDangChon,
               decoration: const InputDecoration(
                 labelText: 'Học kỳ',
                 border: OutlineInputBorder(),

@@ -47,6 +47,7 @@ class StudentTableRow {
   final String ten;
   final double gk;
   final double ck;
+  final String lop;
   final TextEditingController gkController;
   final TextEditingController ckController;
   final Function(int, String, String) onUpdateScore;
@@ -60,6 +61,7 @@ class StudentTableRow {
     required this.ten,
     required this.gk,
     required this.ck,
+    required this.lop,
     required this.gkController,
     required this.ckController,
     required this.onUpdateScore,
@@ -93,6 +95,13 @@ class StudentTableRow {
         ),
         // Tên
         DataCell(Text(ten, style: const TextStyle(fontSize: 12))),
+        // Lớp
+        DataCell(
+          Text(
+            lop,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ),
         // Giữa kỳ
         DataCell(
           ScoreInputField(

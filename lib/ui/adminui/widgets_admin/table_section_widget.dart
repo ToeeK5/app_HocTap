@@ -116,7 +116,7 @@ class TableSectionWidget extends StatelessWidget {
       columnSpacing: 24,
       dataRowHeight: 60,
       headingRowHeight: 56,
-      headingRowColor: MaterialStateColor.resolveWith(
+      headingRowColor: WidgetStateColor.resolveWith(
         (states) => AppColors.backgroundColor,
       ),
       columns: const [
@@ -136,6 +136,12 @@ class TableSectionWidget extends StatelessWidget {
         DataColumn(
           label: Text(
             'Họ và Tên',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          ),
+        ),
+        DataColumn(
+          label: Text(
+            'Lớp',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
         ),
@@ -184,6 +190,7 @@ class TableSectionWidget extends StatelessWidget {
         stt: data['stt'] as int,
         mssv: data['mssv'] as String,
         ten: data['ten'] as String,
+        lop: data['lop'] as String,
         gk: data['gk'] as double,
         ck: data['ck'] as double,
         gkController: controllers[index]?['gk'] ?? TextEditingController(),

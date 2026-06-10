@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget{
 
  Route<dynamic> _khongHieuUng(Widget man){
   return PageRouteBuilder(
-   pageBuilder:(_,__,___)=>man,
+   pageBuilder:(_,_,_)=>man,
    transitionDuration:Duration.zero,
    reverseTransitionDuration:Duration.zero,
   );

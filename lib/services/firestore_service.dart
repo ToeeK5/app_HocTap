@@ -199,7 +199,7 @@ class FirestoreService {
         .where('lop', isEqualTo: lop)
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => SinhVien.fromFirestore(doc.data() as Map<String, dynamic>))
+            .map((doc) => SinhVien.fromFirestore(doc.data()))
             .toList());
   }
 
@@ -210,7 +210,7 @@ class FirestoreService {
         .where('maMon', isEqualTo: maMon)
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => Diem.fromFirestore(doc.data() as Map<String, dynamic>))
+            .map((doc) => Diem.fromFirestore(doc.data()))
             .toList());
   }
 }
