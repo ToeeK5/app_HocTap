@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../data/app_data.dart';
 import '../../models/mon_hoc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+// Đảm bảo import đúng đường dẫn FirestoreService của bạn
+import '../../../services/firestore_service.dart'; 
 
 class NhapMonScreen extends StatefulWidget {
   const NhapMonScreen({super.key});
@@ -10,41 +12,70 @@ class NhapMonScreen extends StatefulWidget {
 }
 
 class _NhapMonScreenState extends State<NhapMonScreen> {
+  // Khởi tạo đối tượng kết nối Firestore Service
+  final _firestoreService = FirestoreService();
+
   String _searchQuery = '';
-  String _selectedSubjectType = ''; // 'mandatory', 'elective', or '' for all
-  late List<MonHoc> _filteredMonHocList;
+  String _selectedSubjectType = ''; // 'mandatory', 'elective', hoặc '' cho tất cả
+  
+  List<MonHoc> _allMonHocList = [];      // Danh sách gốc tải từ Firestore
+  List<MonHoc> _filteredMonHocList = []; // Danh sách sau khi lọc & tìm kiếm
+  bool _isLoading = true;                // Trạng thái đợi tải dữ liệu
 
   final Color _primaryColor = const Color(0xFF006491);
-  final Color _secondaryColor = const Color(0xFF206488);
-  final Color _tertiaryColor = const Color(0xFF006397);
   final Color _backgroundColor = const Color(0xFFF7F9FF);
   final Color _surfaceColor = const Color(0xFFFFFFFF);
   final Color _borderColor = const Color(0xFFD6EAF8);
   final Color _accentBlue = const Color(0xFF5DADE2);
-  final Color _successGreen = const Color(0xFF117A65);
   final Color _errorRed = const Color(0xFFC0392B);
 
   @override
   void initState() {
     super.initState();
-    _filterSubjects();
+    _loadDanhSachMonHoc();
   }
 
+  /// Tải danh sách môn học từ Firebase Firestore
+  Future<void> _loadDanhSachMonHoc() async {
+    setState(() => _isLoading = true);
+    try {
+      // Giả định FirestoreService của bạn có hàm getDanhSachMonHoc() trả về Future<List<MonHoc>>
+      // Nếu chưa có, bạn có thể triển khai dựa trên collection('mon_hoc') tương tự như sinh_vien
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('mon_hoc').get();
+      
+      _allMonHocList = querySnapshot.docs.map((doc) {
+        // Áp dụng hàm map từ Firestore document sang Object MonHoc của bạn
+        final data = doc.data() as Map<String, dynamic>;
+        return MonHoc(
+          maMon: doc.id, // Hoặc data['maMon']
+          tenMon: data['tenMon'] ?? '',
+          soTinChi: data['soTinChi'] ?? 0,
+          hocKy: data['hocKy'] ?? 1,
+        );
+      }).toList();
+
+      _filterSubjects();
+    } catch (e) {
+      print('Lỗi tải danh sách môn học: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không thể tải dữ liệu môn học: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  /// Hàm lọc dữ liệu tại Local Client sau khi đã tải danh sách tổng từ Firestore
   void _filterSubjects() {
     setState(() {
-      _filteredMonHocList = AppData.danhSachMonHoc.where((monHoc) {
+      _filteredMonHocList = _allMonHocList.where((monHoc) {
         final matchesSearchQuery =
-            monHoc.maMon.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-            monHoc.tenMon.toLowerCase().contains(_searchQuery.toLowerCase());
+            (monHoc.maMon ?? '').toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            (monHoc.tenMon ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
 
-        // Logic lọc theo loại môn học (bắt buộc hoặc tự chọn) > 2 tín chỉ là bắt buộc, 
-        //<= 2 tín chỉ là tự chọn
-        final matchesSubjectType =
-            _selectedSubjectType.isEmpty ||
-            (_selectedSubjectType == 'mandatory' &&
-                monHoc.soTinChi > 2) || 
-            (_selectedSubjectType == 'elective' &&
-                monHoc.soTinChi <= 2); 
+        final matchesSubjectType = _selectedSubjectType.isEmpty ||
+            (_selectedSubjectType == 'mandatory' && monHoc.soTinChi > 2) ||
+            (_selectedSubjectType == 'elective' && monHoc.soTinChi <= 2);
 
         return matchesSearchQuery && matchesSubjectType;
       }).toList();
@@ -54,7 +85,7 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
   void _addMonHoc() {
     showDialog(
       context: context,
-      barrierDismissible: false, // Ngăn bấm ra ngoài làm rò rỉ controller
+      barrierDismissible: false,
       builder: (context) => _buildAddEditMonHocDialog(null),
     );
   }
@@ -72,9 +103,8 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        // Sửa lỗi dấu nháy đơn lồng nhau bằng cách dùng dấu nháy kép bọc ngoài
         content: Text(
-          "Bạn có chắc chắn muốn xóa môn học '${monHoc.tenMon}' không?",
+          "Bạn có chắc chắn muốn xóa môn học '${monHoc.tenMon}' khỏi hệ thống không? Hành động này không thể hoàn tác.",
         ),
         actions: [
           TextButton(
@@ -82,15 +112,27 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
             child: const Text('Hủy'),
           ),
           TextButton(
-            onPressed: () {
-              setState(() {
-                AppData.danhSachMonHoc.removeWhere(
-                  (m) => m.maMon == monHoc.maMon,
+            onPressed: () async {
+              Navigator.pop(context); // Đóng hộp thoại xác nhận nhanh
+              setState(() => _isLoading = true);
+              try {
+                // Thực hiện xóa document trên Firestore dựa trên mã môn (Document ID)
+                await FirebaseFirestore.instance
+                    .collection('mon_hoc')
+                    .doc(monHoc.maMon)
+                    .delete();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Xóa môn học thành công!')),
                 );
-                // Đảm bảo hàm _filterSubjects() tồn tại trong file của bạn
-                _filterSubjects();
-              });
-              Navigator.pop(context);
+                // Tải lại danh sách mới nhất
+                _loadDanhSachMonHoc();
+              } catch (e) {
+                setState(() => _isLoading = false);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Xóa thất bại: $e')),
+                );
+              }
             },
             child: Text('Xóa', style: TextStyle(color: _errorRed)),
           ),
@@ -102,143 +144,22 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
   Widget _buildAddEditMonHocDialog(MonHoc? existingMonHoc) {
     final isEditing = existingMonHoc != null;
 
-    // Sử dụng StatefulBuilder để quản lý đóng mở và khởi tạo Controller an toàn
-    return StatefulBuilder(
-      builder: (context, setDialogState) {
-        // Khởi tạo controllers an toàn bên trong block builder
-        final maMonController = TextEditingController(
-          text: isEditing ? existingMonHoc.maMon : '',
-        );
-        final tenMonController = TextEditingController(
-          text: isEditing ? existingMonHoc.tenMon : '',
-        );
-        final soTinChiController = TextEditingController(
-          text: isEditing ? existingMonHoc.soTinChi.toString() : '',
-        );
-
-        return AlertDialog(
-          title: Text(isEditing ? 'Chỉnh sửa môn học' : 'Thêm môn học mới'),
-          content: SingleChildScrollView(
-            // Chống tràn màn hình khi bật bàn phím ảo
-            child: Column(
-              mainAxisSize:
-                  MainAxisSize.min, // Sửa lỗi chữ 'quizás' thành 'min'
-              children: [
-                TextField(
-                  controller: maMonController,
-                  decoration: const InputDecoration(
-                    labelText: 'Mã môn',
-                    border: OutlineInputBorder(),
-                  ),
-                  enabled: !isEditing,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: tenMonController,
-                  decoration: const InputDecoration(
-                    labelText: 'Tên môn học',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: soTinChiController,
-                  decoration: const InputDecoration(
-                    labelText: 'Số tín chỉ',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // Giải phóng bộ nhớ trước khi đóng
-                maMonController.dispose();
-                tenMonController.dispose();
-                soTinChiController.dispose();
-                Navigator.pop(context);
-              },
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (maMonController.text.trim().isEmpty ||
-                    tenMonController.text.trim().isEmpty ||
-                    soTinChiController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Vui lòng điền đầy đủ thông tin'),
-                    ),
-                  );
-                  return;
-                }
-
-                final newMaMon = maMonController.text.trim();
-                final newTenMon = tenMonController.text.trim();
-                final newSoTinChi = int.tryParse(
-                  soTinChiController.text.trim(),
-                );
-
-                if (newSoTinChi == null || newSoTinChi <= 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Số tín chỉ không hợp lệ')),
-                  );
-                  return;
-                }
-
-                // Kiểm tra trùng mã môn khi THÊM MỚI
-                if (!isEditing) {
-                  final isDuplicate = AppData.danhSachMonHoc.any(
-                    (m) =>
-                        (m.maMon ?? '').trim().toLowerCase() ==
-                        newMaMon.toLowerCase(),
-                  );
-                  if (isDuplicate) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Mã môn học này đã tồn tại'),
-                      ),
-                    );
-                    return;
-                  }
-                }
-
-                // Cập nhật lên State tổng của màn hình chính
-                setState(() {
-                  if (isEditing) {
-                    existingMonHoc.tenMon = newTenMon;
-                    existingMonHoc.soTinChi = newSoTinChi;
-                  } else {
-                    AppData.danhSachMonHoc.add(
-                      MonHoc(
-                        maMon: newMaMon,
-                        tenMon: newTenMon,
-                        soTinChi: newSoTinChi,
-                        hocKy: 3,
-                      ),
-                    );
-                  }
-                  _filterSubjects(); // Gọi hàm cập nhật lại UI màn hình cha
-                });
-
-                // Giải phóng bộ nhớ sau khi lưu thành công
-                maMonController.dispose();
-                tenMonController.dispose();
-                soTinChiController.dispose();
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: _accentBlue),
-              child: Text(
-                isEditing ? 'Cập nhật' : 'Thêm',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
-        );
-      },
+    // Định nghĩa và quản lý vòng đời Controller chuẩn xác thông qua StatefulWidget cục bộ bên trong Dialog
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        width: 500,
+        padding: const EdgeInsets.all(24),
+        child: _AddEditDialogContent(
+          existingMonHoc: existingMonHoc,
+          isEditing: isEditing,
+          allMonHocList: _allMonHocList,
+          accentBlue: _accentBlue,
+          onSaveSuccess: () {
+            _loadDanhSachMonHoc(); // Tải lại giao diện cha sau khi hoàn tất thêm/sửa
+          },
+        ),
+      ),
     );
   }
 
@@ -248,71 +169,41 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
 
     return Scaffold(
       backgroundColor: _backgroundColor,
-      body: isDesktop
-          ? Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      _buildTopBar(),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: _buildMainContent(),
-                        ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : isDesktop
+              ? Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          _buildTopBar(),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: _buildMainContent(),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildTopBarMobile(),
+                    Expanded(
+                      child: SingleChildScrollView(child: _buildMainContent()),
+                    ),
+                  ],
                 ),
-              ],
-            )
-          : Column(
-              children: [
-                _buildTopBarMobile(),
-                Expanded(
-                  child: SingleChildScrollView(child: _buildMainContent()),
-                ),
-              ],
-            ),
     );
   }
 
-  Widget _buildNavItem(
-    IconData icon,
-    String label,
-    bool isActive, {
-    bool isError = false,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF9AD6FF) : Colors.transparent,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon,
-          size: 20,
-          color: isError ? _errorRed : (isActive ? _primaryColor : Colors.grey),
-        ),
-        title: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-            color: isError ? _errorRed : Colors.black87,
-          ),
-        ),
-        dense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-      ),
-    );
-  }
-
-  // ==================== TOP BAR (reused from nhapdiem_screen) ====================
+  // ==================== TOP BAR ====================
   Widget _buildTopBar() {
     return Container(
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 32),
       decoration: BoxDecoration(
         color: _surfaceColor,
         border: Border(bottom: BorderSide(color: _borderColor, width: 1)),
@@ -322,15 +213,10 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
         children: [
           const Text(
             'EduAdmin Dashboard',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
           ),
           Row(
             children: [
-              // Search
               Container(
                 width: 200,
                 height: 40,
@@ -340,61 +226,40 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Tìm kiếm...',
+                  decoration: const InputDecoration(
+                    hintText: 'Tìm kiếm nhanh...',
                     border: InputBorder.none,
-                    prefixIcon: const Icon(Icons.search, size: 18),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    prefixIcon: Icon(Icons.search, size: 18),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
                   ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                      _filterSubjects();
+                    });
+                  },
                 ),
               ),
               const SizedBox(width: 16),
-              // Notifications
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () {},
-              ),
+              IconButton(icon: const Icon(Icons.refresh), onPressed: _loadDanhSachMonHoc),
               const SizedBox(width: 16),
-              // Help
-              IconButton(
-                icon: const Icon(Icons.help_outline),
-                onPressed: () {},
-              ),
-              const SizedBox(width: 16),
-              // Divider
               Container(width: 1, height: 30, color: _borderColor),
               const SizedBox(width: 16),
-              // User Info
               Row(
                 children: [
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: const [
-                      Text(
-                        'Nguyễn Văn A',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                      Text(
-                        'Giảng viên',
-                        style: TextStyle(fontSize: 11, color: Colors.grey),
-                      ),
+                      Text('Nguyễn Văn A', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      Text('Quản trị viên', style: TextStyle(fontSize: 11, color: Colors.grey)),
                     ],
                   ),
                   const SizedBox(width: 10),
                   CircleAvatar(
                     radius: 16,
                     backgroundColor: _accentBlue,
-                    child: const Text(
-                      'A',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: const Text('A', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -413,14 +278,8 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'EduAdmin',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          CircleAvatar(
-            backgroundColor: _accentBlue,
-            child: const Text('A', style: TextStyle(color: Colors.white)),
-          ),
+          const Text('EduAdmin', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadDanhSachMonHoc),
         ],
       ),
     );
@@ -450,12 +309,9 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Quản lý danh sách môn học',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            const Text('Quản lý danh sách môn học', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             Text(
-              'Xem, tìm kiếm và cập nhật thông tin các môn học trong chương trình đào tạo.',
+              'Xem, tìm kiếm và đồng bộ trực tiếp thông tin các môn học với hệ thống cơ sở dữ liệu đám mây Firestore.',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
@@ -481,39 +337,25 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
         color: _surfaceColor,
         border: Border.all(color: _borderColor),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFEAF4FB),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+        boxShadow: const [
+          BoxShadow(color: Color(0xFFEAF4FB), blurRadius: 12, offset: Offset(0, 4)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Tìm kiếm và Lọc',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-              color: Colors.grey[800],
-            ),
-          ),
+          Text('Tìm kiếm và Bộ lọc nâng cao', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.grey[800])),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Nhập mã hoặc tên môn học...',
-                    labelText: 'Tìm kiếm',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.search),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 12,
-                    ),
+                  decoration: const InputDecoration(
+                    hintText: 'Nhập mã môn học hoặc tên môn học cần lọc...',
+                    labelText: 'Từ khóa tìm kiếm',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.search),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                   ),
                   onChanged: (value) {
                     setState(() {
@@ -528,23 +370,15 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
                 width: 200,
                 child: DropdownButtonFormField<String>(
                   decoration: const InputDecoration(
-                    labelText: 'Loại môn học',
+                    labelText: 'Loại cấu trúc môn',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 12,
-                    ),
+                    contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                   ),
-                  value: _selectedSubjectType.isEmpty
-                      ? null
-                      : _selectedSubjectType,
+                  value: _selectedSubjectType.isEmpty ? null : _selectedSubjectType,
                   items: const [
                     DropdownMenuItem(value: '', child: Text('Tất cả các loại')),
-                    DropdownMenuItem(
-                      value: 'mandatory',
-                      child: Text('Bắt buộc'),
-                    ),
-                    DropdownMenuItem(value: 'elective', child: Text('Tự chọn')),
+                    DropdownMenuItem(value: 'mandatory', child: Text('Bắt buộc (> 2 TC)')),
+                    DropdownMenuItem(value: 'elective', child: Text('Tự chọn (≤ 2 TC)')),
                   ],
                   onChanged: (value) {
                     setState(() {
@@ -552,21 +386,6 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
                       _filterSubjects();
                     });
                   },
-                ),
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton.icon(
-                onPressed: _filterSubjects,
-                icon: const Icon(Icons.filter_list),
-                label: const Text('Lọc'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      _accentBlue, // Use accent blue for consistency
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
                 ),
               ),
             ],
@@ -582,12 +401,8 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
         color: _surfaceColor,
         border: Border.all(color: _borderColor),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFEAF4FB),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
+        boxShadow: const [
+          BoxShadow(color: Color(0xFFEAF4FB), blurRadius: 12, offset: Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -619,19 +434,13 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Danh sách môn học',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-          ),
+          const Text('Danh sách môn học hiện hành', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFF9AD6FF),
-              borderRadius: BorderRadius.circular(4),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFF9AD6FF), borderRadius: BorderRadius.circular(4)),
             child: Text(
-              'Tổng: ${_filteredMonHocList.length} môn học',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF165E81)),
+              'Tổng số dòng: ${_filteredMonHocList.length}',
+              style: const TextStyle(fontSize: 12, color: Color(0xFF165E81), fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -640,114 +449,65 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
   }
 
   Widget _buildTable() {
+    if (_filteredMonHocList.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(32.0),
+        child: Center(child: Text('Không tìm thấy môn học nào phù hợp.')),
+      );
+    }
+
     return DataTable(
       columnSpacing: 24,
       dataRowHeight: 60,
       headingRowHeight: 56,
-      headingRowColor: MaterialStateColor.resolveWith(
-        (states) => const Color(0xFFF7F9FF),
-      ),
+      headingRowColor: WidgetStateColor.resolveWith((states) => const Color(0xFFF7F9FF)),
       columns: const [
-        DataColumn(
-          label: Text(
-            'Mã môn',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            'Tên môn học',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            'Số tín chỉ',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            'Loại môn',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          ),
-        ),
-        DataColumn(
-          label: Text(
-            'Hành động',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ),
+        DataColumn(label: Text('Mã môn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+        DataColumn(label: Text('Tên môn học', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+        DataColumn(label: Text('Số tín chỉ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+        DataColumn(label: Text('Phân loại', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+        DataColumn(label: Text('Thao tác', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
       ],
       rows: _filteredMonHocList.map((monHoc) => _buildDataRow(monHoc)).toList(),
     );
   }
 
   DataRow _buildDataRow(MonHoc monHoc) {
-    String subjectType = (monHoc.soTinChi > 2)
-        ? 'Bắt buộc'
-        : 'Tự chọn'; // Example logic
-    Color typeColor = (monHoc.soTinChi > 2)
-        ? _errorRed
-        : _accentBlue; // Example color
-    Color bgColor = (monHoc.soTinChi > 2)
-        ? const Color(0xFFFDEDEC)
-        : const Color(0xFFEAF4FB); // Example color
+    bool isMandatory = monHoc.soTinChi > 2;
+    String subjectType = isMandatory ? 'Bắt buộc' : 'Tự chọn';
+    Color typeColor = isMandatory ? _errorRed : _accentBlue;
+    Color bgColor = isMandatory ? const Color(0xFFFDEDEC) : const Color(0xFFEAF4FB);
 
     return DataRow(
       cells: [
-        DataCell(
-          Text(
-            monHoc.maMon,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF006491),
-            ),
-          ),
-        ),
-        DataCell(Text(monHoc.tenMon, style: const TextStyle(fontSize: 12))),
-        DataCell(
-          Text(
-            monHoc.soTinChi.toString(),
-            style: const TextStyle(fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-        ),
+        DataCell(Text(monHoc.maMon ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF006491)))),
+        DataCell(Text(monHoc.tenMon ?? '', style: const TextStyle(fontSize: 12))),
+        DataCell(Text(monHoc.soTinChi.toString(), style: const TextStyle(fontSize: 12))),
         DataCell(
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
+            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(20)),
             child: Text(
               subjectType,
-              style: TextStyle(
-                fontSize: 11,
-                color: typeColor,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(fontSize: 11, color: typeColor, fontWeight: FontWeight.w500),
             ),
           ),
         ),
         DataCell(
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
                 icon: Icon(Icons.edit, size: 18, color: _primaryColor),
                 onPressed: () => _editMonHoc(monHoc),
+                padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                padding: const EdgeInsets.all(4),
               ),
+              const SizedBox(width: 12),
               IconButton(
                 icon: Icon(Icons.delete, size: 18, color: _errorRed),
                 onPressed: () => _deleteMonHoc(monHoc),
+                padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                padding: const EdgeInsets.all(4),
               ),
             ],
           ),
@@ -757,7 +517,6 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
   }
 
   Widget _buildTableFooter() {
-    // Basic pagination, needs to be hooked up to actual pagination logic
     return Container(
       color: const Color(0xFFF7F9FF),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -765,59 +524,166 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Hiển thị 1-${_filteredMonHocList.length} trên ${_filteredMonHocList.length} môn học',
+            'Hiển thị toàn bộ ${_filteredMonHocList.length} kết quả.',
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
           Row(
             children: [
-              _buildPaginationButton(Icons.chevron_left, () {}),
-              _buildPaginationPageButton('1', true),
-              _buildPaginationButton(Icons.chevron_right, () {}),
+              IconButton(icon: const Icon(Icons.chevron_left, size: 16), onPressed: null),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(color: const Color(0xFFEAF4FB), borderRadius: BorderRadius.circular(4)),
+                child: const Text('1', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+              IconButton(icon: const Icon(Icons.chevron_right, size: 16), onPressed: null),
             ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildPaginationButton(IconData icon, VoidCallback onPressed) {
-    return SizedBox(
-      width: 32,
-      height: 32,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: _borderColor),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: IconButton(
-          icon: Icon(icon, size: 16),
-          onPressed: onPressed,
-          padding: EdgeInsets.zero,
-        ),
+// ==================== WIDGET DIALOG RIÊNG BIỆT ĐỂ KHÔNG BỊ TRÀN CONTROLLER MÁY ====================
+class _AddEditDialogContent extends StatefulWidget {
+  final MonHoc? existingMonHoc;
+  final bool isEditing;
+  final List<MonHoc> allMonHocList;
+  final Color accentBlue;
+  final VoidCallback onSaveSuccess;
+
+  const _AddEditDialogContent({
+    required this.existingMonHoc,
+    required this.isEditing,
+    required this.allMonHocList,
+    required this.accentBlue,
+    required this.onSaveSuccess,
+  });
+
+  @override
+  State<_AddEditDialogContent> createState() => _AddEditDialogContentState();
+}
+
+class _AddEditDialogContentState extends State<_AddEditDialogContent> {
+  late TextEditingController maMonController;
+  late TextEditingController tenMonController;
+  late TextEditingController soTinChiController;
+  final _formKey = GlobalKey<FormState>();
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    maMonController = TextEditingController(text: widget.isEditing ? widget.existingMonHoc!.maMon : '');
+    tenMonController = TextEditingController(text: widget.isEditing ? widget.existingMonHoc!.tenMon : '');
+    soTinChiController = TextEditingController(text: widget.isEditing ? widget.existingMonHoc!.soTinChi.toString() : '');
+  }
+
+  @override
+  void dispose() {
+    maMonController.dispose();
+    tenMonController.dispose();
+    soTinChiController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.isEditing ? 'Chỉnh sửa thông tin môn học' : 'Thêm dữ liệu môn học mới',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 20),
+          TextFormField(
+            controller: maMonController,
+            decoration: const InputDecoration(labelText: 'Mã môn học', border: OutlineInputBorder()),
+            enabled: !widget.isEditing,
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) return 'Vui lòng nhập mã môn';
+              if (!widget.isEditing) {
+                bool isDup = widget.allMonHocList.any((m) => m.maMon.trim().toLowerCase() == val.trim().toLowerCase());
+                if (isDup) return 'Mã môn học này đã có trên cơ sở dữ liệu!';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: tenMonController,
+            decoration: const InputDecoration(labelText: 'Tên định danh môn học', border: OutlineInputBorder()),
+            validator: (val) => (val == null || val.trim().isEmpty) ? 'Tên môn học bắt buộc nhập' : null,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: soTinChiController,
+            decoration: const InputDecoration(labelText: 'Số lượng tín chỉ cấu thành', border: OutlineInputBorder()),
+            keyboardType: TextInputType.number,
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) return 'Vui lòng điền số tín chỉ';
+              final parsed = int.tryParse(val.trim());
+              if (parsed == null || parsed <= 0) return 'Số tín chỉ phải lớn hơn 0';
+              return null;
+            },
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: _isSaving ? null : () => Navigator.pop(context),
+                child: const Text('Đóng'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _isSaving ? null : _saveDataToFirestore,
+                style: ElevatedButton.styleFrom(backgroundColor: widget.accentBlue),
+                child: _isSaving
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(widget.isEditing ? 'Cập nhật Firestore' : 'Lưu lên Cloud', style: const TextStyle(color: Colors.white)),
+              ),
+            ],
+          )
+        ],
       ),
     );
   }
 
-  Widget _buildPaginationPageButton(String page, bool isActive) {
-    return Container(
-      width: 32,
-      height: 32,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFEAF4FB) : Colors.transparent,
-        border: Border.all(color: isActive ? _accentBlue : _borderColor),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Center(
-        child: Text(
-          page,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: isActive ? const Color(0xFF2E86C1) : Colors.grey[600],
-          ),
-        ),
-      ),
-    );
+  Future<void> _saveDataToFirestore() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    final mMa = maMonController.text.trim();
+    final mTen = tenMonController.text.trim();
+    final mTin = int.parse(soTinChiController.text.trim());
+
+    try {
+      // Đẩy gói dữ liệu lên Cloud Firestore collection: 'mon_hoc'
+      await FirebaseFirestore.instance.collection('mon_hoc').doc(mMa).set({
+        'maMon': mMa,
+        'tenMon': mTen,
+        'soTinChi': mTin,
+        'hocKy': widget.isEditing ? widget.existingMonHoc!.hocKy : 1, // Giữ nguyên học kỳ hoặc mặc định học kỳ 1
+        'lastUpdated': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      Navigator.pop(context); // Đóng Dialog
+      widget.onSaveSuccess(); // Triệu hồi làm mới UI màn hình chính
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(widget.isEditing ? 'Cập nhật môn học thành công!' : 'Thêm môn học mới lên Firestore thành công!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lưu thất bại: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 }

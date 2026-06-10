@@ -3,6 +3,7 @@ import '../adminui/nhapmon_screen.dart';
 import '../adminui/nhapdiem_screen.dart'; 
 import '../login_screen.dart'; 
 
+
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
 
@@ -229,7 +230,7 @@ class _AdminScreenState extends State<AdminScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             // Màu nền: Nếu đang Active thì hiển thị màu xanh nhạt sáng bóng, không thì trong suốt
-            color: isActive ? const Color(0xFF9AD6FF).withOpacity(0.4) : Colors.transparent,
+            color: isActive ? const Color(0xFF9AD6FF).withValues(alpha: 0.4) : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
