@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/session_service.dart';
 import '../utils/theme_app.dart';
-
-class LoginScreen extends StatefulWidget{
+import '../services/day_du_lieu_firestore_service.dart';
+ class LoginScreen extends StatefulWidget{
  const LoginScreen({super.key});
 
  @override
@@ -34,22 +34,29 @@ class _LoginScreenState extends State<LoginScreen>{
   );
  }
 
- void xuLyDangNhap(){
-  final tk=authService.dangNhap(taiKhoanController.text,matKhauController.text);
+ void xuLyDangNhap() async {
+  final tk = await authService.dangNhap(
+    taiKhoanController.text,
+    matKhauController.text,
+  );
 
-  if(tk==null){
-   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text("Sai tài khoản hoặc mật khẩu")));
-   return;
+  if (tk == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Sai tài khoản hoặc mật khẩu")),
+    );
+    return;
   }
 
   SessionService.luuDangNhap(tk);
 
-  if(authService.laAdmin(tk)){
-   Navigator.pushReplacementNamed(context,"/admin");
-  }else{
-   Navigator.pushReplacementNamed(context,"/home");
+  if (authService.laAdmin(tk)) {
+    Navigator.pushReplacementNamed(context, "/admin");
+  } else {
+    Navigator.pushReplacementNamed(context, "/home");
   }
- }
+}
+
+   
 
  @override
  Widget build(BuildContext context){
@@ -68,6 +75,20 @@ class _LoginScreenState extends State<LoginScreen>{
        ),
        const SizedBox(height:25),
        const Text("QUẢN LÝ HỌC TẬP",style:TextStyle(fontSize:28,fontWeight:FontWeight.bold,color:ThemeApp.chuDam)),
+ 
+// TextButton(
+//   onPressed: () async {
+//     await DayDuLieuFirestoreService().themDiemDayDuChoTatCaSinhVien();
+
+//     if (!context.mounted) return;
+
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       const SnackBar(content: Text("Đã đẩy đủ điểm lên Firestore")),
+//     );
+//   },
+//   child: const Text("Đẩy đủ điểm Firestore"),
+// ),
+
        const Text("SINH VIÊN CÁ NHÂN",style:TextStyle(fontSize:18,fontWeight:FontWeight.w600,color:ThemeApp.mauChinh)),
        const SizedBox(height:10),
        const Text("Đăng nhập để tiếp tục",style:TextStyle(color:ThemeApp.chuPhu)),
@@ -86,6 +107,7 @@ class _LoginScreenState extends State<LoginScreen>{
          ),
         ),
        ),
+       
        const SizedBox(height:35),
        SizedBox(
         width:double.infinity,height:58,
@@ -101,8 +123,10 @@ class _LoginScreenState extends State<LoginScreen>{
        const Text("Version 1.0",style:TextStyle(color:ThemeApp.chuPhu)),
       ],
      ),
+     
     ),
    ),
+   
   );
  }
 }

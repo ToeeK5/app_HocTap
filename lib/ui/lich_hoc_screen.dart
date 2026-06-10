@@ -20,13 +20,11 @@ class _LichHocScreenState extends State<LichHocScreen> {
   @override
   Widget build(BuildContext context) {
     final maSV = SessionService.layMaSV();
-    final sinhVien = SinhVienService().laySinhVienTheoMa(maSV);
+    final sinhVien = null;
     final service = LichHocService();
     final dsTatCa = service.layLichTheoSinhVien(maSV);
-    final dsHocKy = _danhSachHocKy(dsTatCa, sinhVien?.hocKyHienTai);
-    final hocKy = hocKyDangChon ??
-        sinhVien?.hocKyHienTai ??
-        (dsHocKy.isEmpty ? null : dsHocKy.first);
+    final dsHocKy = _danhSachHocKy(dsTatCa, null);
+final hocKy = hocKyDangChon ?? (dsHocKy.isEmpty ? null : dsHocKy.first);
 
     var dsHienThi = dsTatCa;
     if (hocKy != null) {
@@ -55,10 +53,10 @@ class _LichHocScreenState extends State<LichHocScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _ThongTinSinhVien(
-                ten: sinhVien?.hoTen ?? 'Sinh viên',
+                ten: 'Sinh viên',
                 maSV: maSV,
-                lop: sinhVien?.lop ?? '',
-                hocKy: sinhVien?.hocKyHienTai ?? 0,
+                lop: '',
+                hocKy: hocKy ?? 0,
               ),
               const SizedBox(height: 16),
               _BoLoc(

@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/diem_service.dart';
 import '../services/lich_hoc_service.dart';
 import '../services/session_service.dart';
-import '../services/sinh_vien_service.dart';
-import '../utils/theme_app.dart';
+ import '../utils/theme_app.dart';
 import '../utils/tinh_toan_hoc_tap.dart';
 import '../widgets/bottom_nav_app.dart';
 import '../widgets/stat_card.dart';
@@ -15,13 +14,13 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final maSV = SessionService.layMaSV();
-    final sinhVien = SinhVienService().laySinhVienTheoMa(maSV);
-    final dsDiem = DiemService().layDiemTheoSinhVien(maSV);
+    final sinhVien = null;
+final dsDiem = <DiemMonHienThi>[];
     final lichService = LichHocService();
     final dsLich = lichService.layLichTheoHocKy(
-      maSV,
-      sinhVien?.hocKyHienTai ?? 0,
-    );
+  maSV,
+  0,
+);
     final lichHomNay = lichService.layLichHomNay(maSV);
     final dsKeHoach = lichService.layKeHoachTheoSinhVien(maSV);
     final gpa10 = TinhToanHocTap.tinhGPAHe10(dsDiem);
@@ -42,10 +41,10 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _Header(
-                tenSinhVien: sinhVien?.hoTen ?? 'Sinh viên',
+                tenSinhVien: 'Sinh viên',
                 maSV: maSV,
-                lop: sinhVien?.lop ?? '',
-                hocKy: sinhVien?.hocKyHienTai ?? 0,
+                lop: '',
+                hocKy: 0,
               ),
               const SizedBox(height: 16),
               Row(

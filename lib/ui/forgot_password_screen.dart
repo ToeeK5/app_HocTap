@@ -38,33 +38,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  void xacNhan() {
-    final taiKhoan = taiKhoanController.text.trim();
-    final email = emailController.text.trim();
+  void xacNhan() async {
+  final taiKhoan = taiKhoanController.text.trim();
+  final email = emailController.text.trim();
 
-    if (taiKhoan.isEmpty || email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui long nhap day du thong tin")),
-      );
-      return;
-    }
-
-    final tk = authService.kiemTraQuenMatKhau(taiKhoan, email);
-
-    if (tk == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tai khoan hoac email khong dung")),
-      );
-      return;
-    }
-
-    SessionService.luuMaTKDoiMatKhau(tk.maTK);
-
-    Navigator.pushNamed(
-      context,
-      "/reset-password",
+  if (taiKhoan.isEmpty || email.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Vui long nhap day du thong tin")),
     );
+    return;
   }
+
+  final tk = await authService.kiemTraQuenMatKhau(taiKhoan, email);
+
+  if (!mounted) return;
+
+  if (tk == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Tai khoan hoac email khong dung")),
+    );
+    return;
+  }
+
+  SessionService.luuMaTKDoiMatKhau(tk.maTK);
+
+  Navigator.pushNamed(
+    context,
+    "/reset-password",
+  );
+}
 
   @override
   Widget build(BuildContext context) {

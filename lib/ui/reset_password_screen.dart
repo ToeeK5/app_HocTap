@@ -51,62 +51,64 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  void doiMatKhau() {
-    final maTK = SessionService.maTKDoiMatKhau;
+  void doiMatKhau() async {
+  final maTK = SessionService.maTKDoiMatKhau;
 
-    if (maTK == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Khong tim thay tai khoan")),
-      );
+  if (maTK == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Khong tim thay tai khoan")),
+    );
 
-      Navigator.pop(context);
-      return;
-    }
-
-    final mk = matKhauMoiController.text.trim();
-    final xacNhan = xacNhanController.text.trim();
-
-    if (mk.isEmpty || xacNhan.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui long nhap day du mat khau")),
-      );
-      return;
-    }
-
-    if (mk.length < 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Mat khau phai tu 3 ky tu")),
-      );
-      return;
-    }
-
-    if (mk != xacNhan) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Mat khau xac nhan khong khop")),
-      );
-      return;
-    }
-
-    final ok = authService.doiMatKhau(maTK, mk);
-
-    if (ok) {
-      SessionService.xoaMaTKDoiMatKhau();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Doi mat khau thanh cong")),
-      );
-
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        "/login",
-        (route) => false,
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Doi mat khau that bai")),
-      );
-    }
+    Navigator.pop(context);
+    return;
   }
+
+  final mk = matKhauMoiController.text.trim();
+  final xacNhan = xacNhanController.text.trim();
+
+  if (mk.isEmpty || xacNhan.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Vui long nhap day du mat khau")),
+    );
+    return;
+  }
+
+  if (mk.length < 3) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Mat khau phai tu 3 ky tu")),
+    );
+    return;
+  }
+
+  if (mk != xacNhan) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Mat khau xac nhan khong khop")),
+    );
+    return;
+  }
+
+  final ok = await authService.doiMatKhau(maTK, mk);
+
+  if (!mounted) return;
+
+  if (ok) {
+    SessionService.xoaMaTKDoiMatKhau();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Doi mat khau thanh cong")),
+    );
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      "/login",
+      (route) => false,
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Doi mat khau that bai")),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
