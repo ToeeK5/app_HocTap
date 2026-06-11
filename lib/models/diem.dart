@@ -50,6 +50,19 @@ class Diem {
     return double.parse(
         (diemGiuaKy * heSoGiuaKy + diemCuoiKy * heSoCuoiKy).toStringAsFixed(1));
   }
+
+  /// Tạo đối tượng Diem trống cho sinh viên chưa có điểm
+  factory Diem.empty(String maSV, String maMon) {
+    return Diem(
+      maDiem: '${maSV}_$maMon',
+      maSV: maSV,
+      maMon: maMon,
+      diemGiuaKy: 0.0,
+      diemCuoiKy: 0.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    );
+  }
 }
 
 
