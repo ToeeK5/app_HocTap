@@ -213,4 +213,95 @@ class FirestoreService {
             .map((doc) => Diem.fromFirestore(doc.data()))
             .toList());
   }
+
+   /// Lấy danh sách điểm của 1 môn học cụ thể
+  /// Hàm này thay thế cho getDiemByMonHoc cũ nếu cần
+  Future<List<Diem>> getDiemCuaMonHoc(String maMon) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('diem')
+        .where('maMon', isEqualTo: maMon)
+        .get();
+
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      return Diem(
+        maDiem: doc.id,
+        maSV: data['maSV'] ?? '',
+        maMon: data['maMon'] ?? '',
+        diemGiuaKy: (data['diemGiuaKy'] ?? 0).toDouble(),
+        diemCuoiKy: (data['diemCuoiKy'] ?? 0).toDouble(),
+        heSoGiuaKy: (data['heSoGiuaKy'] ?? 0.4).toDouble(),
+        heSoCuoiKy: (data['heSoCuoiKy'] ?? 0.6).toDouble(),
+      );
+    }).toList();
+  }
+
+  /// Thêm 1 sinh viên vào môn học (tạo bản ghi điểm rỗng)
+  /// Gọi khi user muốn thêm SV vào 1 môn cụ thể
+  Future<bool> themSinhVienVaoMon({
+    required String maSV,
+    required String maMon,
+  }) async {
+    try {
+      // Document ID = maSV + maMon để không trùng lặp
+      final docId = '${maSV}_$maMon';
+      final docRef = FirebaseFirestore.instance.collection('diem').doc(docId);
+
+      // Kiểm tra đã tồn tại chưa
+      final doc = await docRef.get();
+      if (doc.exists) {
+        return false; // SV đã có trong môn này rồi
+      }
+
+      // Tạo mới với điểm rỗng
+      await docRef.set({
+        'maDiem': docId,
+        'maSV': maSV,
+        'maMon': maMon,
+        'diemGiuaKy': 0.0,
+        'diemCuoiKy': 0.0,
+        'heSoGiuaKy': 0.4,
+        'heSoCuoiKy': 0.6,
+      });
+      return true;
+    } catch (e) {
+      print('Lỗi thêm SV vào môn: $e');
+      return false;
+    }
+  }
+
+  /// Xóa sinh viên khỏi môn học (xóa bản ghi điểm)
+  Future<bool> xoaSinhVienKhoiMon({
+    required String maSV,
+    required String maMon,
+  }) async {
+    try {
+      final docId = '${maSV}_$maMon';
+      await FirebaseFirestore.instance
+          .collection('diem')
+          .doc(docId)
+          .delete();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Lưu hàng loạt điểm (dùng cho nút "Lưu tất cả")
+  Future<bool> luuDiemHangLoat(List<Diem> danhSachDiem) async {
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+      for (var diem in danhSachDiem) {
+        final ref = FirebaseFirestore.instance
+            .collection('diem')
+            .doc(diem.maDiem);
+        batch.set(ref, diem.toFirestore(), SetOptions(merge: true));
+      }
+      await batch.commit();
+      return true;
+    } catch (e) {
+      print('Lỗi lưu điểm: $e');
+      return false;
+    }
+  }
 }

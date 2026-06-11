@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/sinh_vien.dart';
 import '../../models/diem.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/firestore_service.dart';
 import '../../services/admin_services/admin_service.dart';
-import 'widgets_admin/index.dart';
+import 'widgets_admin/WidgetNhapDiemScreen/index.dart';
 
 class NhapDiemScreen extends StatefulWidget {
   const NhapDiemScreen({super.key});
@@ -26,29 +27,44 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
   late Map<int, Map<String, TextEditingController>> _controllers;
   bool _isLoading = true;
 
+  // ⭐ THÊM: Subscription để lắng nghe danh sách môn học
+  StreamSubscription<QuerySnapshot>? _monHocSubscription;
+
   @override
   void initState() {
     super.initState();
     _selectedMonHoc = '';
     _studentData = [];
     _controllers = {};
-    _loadInitialData();
+
+    // ⭐ Bắt đầu lắng nghe danh sách môn học
+    _listenDanhSachMonHoc();
   }
 
-  /// Tải dữ liệu danh sách môn học TRỰC TIẾP TỪ FIREBASE (Bỏ hẳn static AppData)
-  Future<void> _loadInitialData() async {
-    try {
-      setState(() {
-        _isLoading = true;
-      });
+  @override
+  void dispose() {
+    // ⭐ Hủy subscription khi widget bị hủy
+    _monHocSubscription?.cancel();
+    for (var controllers in _controllers.values) {
+      controllers['gk']?.dispose();
+      controllers['ck']?.dispose();
+    }
+    super.dispose();
+  }
 
-      // 1. Lấy danh sách môn học từ collection 'mon_hoc' trên Firestore
-      QuerySnapshot subjectSnapshot = await firestoreInstance.collection('mon_hoc').get();
-      
+  // ================================================================
+  // ⭐ HÀM MỚI: Lắng nghe danh sách môn học REAL-TIME
+  // Khi có môn mới được thêm vào → tự động cập nhật
+  // ================================================================
+  void _listenDanhSachMonHoc() {
+    _monHocSubscription = firestoreInstance
+        .collection('mon_hoc')
+        .snapshots() // ← .snapshots() thay vì .get()
+        .listen((snapshot) {
+      // Lấy danh sách mã môn học
       List<String> clearListSubject = [];
-      for (var doc in subjectSnapshot.docs) {
+      for (var doc in snapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
-        // Ưu tiên lấy trường 'maMH' làm mã môn học
         if (data.containsKey('maMH') && data['maMH'] != null) {
           clearListSubject.add(data['maMH'].toString().trim());
         } else if (data.containsKey('maMon') && data['maMon'] != null) {
@@ -56,35 +72,38 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
         }
       }
 
-      if (clearListSubject.isNotEmpty) {
-        clearListSubject.sort(); // Sắp xếp danh sách môn học tăng dần
-        setState(() {
-          _danhSachMonHoc = clearListSubject;
-          _selectedMonHoc = _danhSachMonHoc.first;
-        });
+      clearListSubject.sort();
+      // ⭐ Nếu môn đang chọn không còn tồn tại → reset
+      if (!clearListSubject.contains(_selectedMonHoc)) {
+        _selectedMonHoc = clearListSubject.isNotEmpty
+            ? clearListSubject.first
+            : '';
+        if (_selectedMonHoc.isNotEmpty) {
+          _loadStudentDataFromFirestore();
+        } else {
+          setState(() {
+            _studentData = [];
+            _controllers = {};
+          });
+        }
       }
 
-      // 2. Tải danh sách sinh viên cho môn học đầu tiên vừa lấy từ Firebase
-      await _loadStudentDataFromFirestore();
-
       setState(() {
+        _danhSachMonHoc = clearListSubject;
         _isLoading = false;
       });
-    } catch (e) {
-      print('Error loading initial data from Firebase: $e');
-      setState(() {
-        _isLoading = false;
-      });
-
+    }, onError: (e) {
+      print('Lỗi lắng nghe môn học: $e');
+      setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi tải dữ liệu môn học từ Firebase: $e'),
+            content: Text('Lỗi tải dữ liệu môn học: $e'),
             backgroundColor: Colors.redAccent,
           ),
         );
       }
-    }
+    });
   }
 
   /// Lấy danh sách sinh viên từ Firestore cho môn học đã chọn
@@ -100,61 +119,45 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
     try {
       final targetMon = _selectedMonHoc.trim();
 
-      // Lấy danh sách sinh viên từ Firestore
+      // 1. Chỉ lấy danh sách ĐIỂM của môn học này từ Firebase
+      List<Diem> diemList = await _firestoreService.getDiemByMonHoc(targetMon);
+
+      // 2. Lấy toàn bộ danh sách sinh viên để đối chiếu thông tin (Tên, Lớp)
       List<SinhVien> allSinhVien = await _firestoreService.getSinhVienList();
 
-      if (allSinhVien.isEmpty) {
-        print('Không có sinh viên nào trong Firestore');
-        setState(() {
-          _studentData = [];
-          _controllers = {};
-        });
-        return;
-      }
-
-      // Sắp xếp theo lớp rồi theo tên sinh viên
-      allSinhVien.sort((a, b) {
-        int lopCompare = a.lop.compareTo(b.lop);
-        if (lopCompare != 0) return lopCompare;
-        return a.hoTen.compareTo(b.hoTen);
-      });
-
-      // Lấy danh sách điểm từ Firestore (Hỗ trợ cả 2 tên hàm thường dùng trong project)
-      List<Diem> diemList = [];
-      try {
-        diemList = await _firestoreService.getDiemByMonHoc(targetMon);
-      } catch (_) {
-        // Fallback phòng trường hợp service của bạn đặt tên là getDiemListByMonHoc
-        diemList = await _firestoreService.getDiemByMonHoc(targetMon);
-      }
+      // Chuyển danh sách sinh viên thành Map để tra cứu Tên/Lớp theo maSV cho nhanh
+      Map<String, SinhVien> svMap = {for (var sv in allSinhVien) sv.maSV: sv};
 
       List<Map<String, dynamic>> tempStudentData = [];
-      for (int i = 0; i < allSinhVien.length; i++) {
-        SinhVien sv = allSinhVien[i];
+      int sttCounter = 1;
 
-        // Tìm điểm tương ứng của sinh viên này
-        var diem = diemList.firstWhere(
-          (d) => d.maSV == sv.maSV,
-          orElse: () => Diem(
-            maDiem: '${sv.maSV}_$targetMon',
-            maSV: sv.maSV,
-            maMon: targetMon,
-            diemGiuaKy: 0.0, // Để mặc định null hoặc 0.0 tùy thuộc vào Model của bạn
-            diemCuoiKy: 0.0,
-            heSoGiuaKy: 0.4,
-            heSoCuoiKy: 0.6,
-          ),
-        );
+      // 3. Duyệt qua những ai THỰC SỰ ĐÃ CÓ ĐIỂM (hoặc đã được thêm) ở môn này
+      for (var diem in diemList) {
+        // Tìm xem sinh viên này thông tin gốc (Tên, Lớp) là gì
+        SinhVien? svGoc = svMap[diem.maSV];
+        
+        if (svGoc != null) {
+          tempStudentData.add({
+            'stt': sttCounter++,
+            'mssv': diem.maSV,
+            'ten': svGoc.hoTen,
+            'lop': svGoc.lop,
+            'gk': diem.diemGiuaKy ?? 0.0,
+            'ck': diem.diemCuoiKy ?? 0.0,
+          });
+        }
+      }
 
-        // Map dữ liệu chính xác (giữ nguyên 'lop' để table hiển thị thêm cột lớp)
-        tempStudentData.add({
-          'stt': i + 1,
-          'mssv': sv.maSV,
-          'ten': sv.hoTen,
-          'lop': sv.lop,
-          'gk': diem.diemGiuaKy ?? 0.0,
-          'ck': diem.diemCuoiKy ?? 0.0,
-        });
+      // 4. Sắp xếp danh sách hiển thị theo Lớp rồi theo Tên cho gọn gàng
+      tempStudentData.sort((a, b) {
+        int lopCompare = a['lop'].toString().compareTo(b['lop'].toString());
+        if (lopCompare != 0) return lopCompare;
+        return a['ten'].toString().compareTo(b['ten'].toString());
+      });
+
+      // Cập nhật lại số thứ tự (stt) sau khi sắp xếp
+      for (int i = 0; i < tempStudentData.length; i++) {
+        tempStudentData[i]['stt'] = i + 1;
       }
 
       _studentData = tempStudentData;
@@ -198,15 +201,6 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    for (var controllers in _controllers.values) {
-      controllers['gk']?.dispose();
-      controllers['ck']?.dispose();
-    }
-    super.dispose();
-  }
-
   // ==================== METHODS ====================
   void _addStudent() async {
     final result = await StudentDialogs.showAddStudentDialog(
@@ -225,6 +219,20 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
         );
 
         if (success) {
+          // ⭐ THÊM ĐOẠN NÀY: Tạo luôn 1 bản ghi điểm 0.0 cho sinh viên này RIÊNG tại môn học hiện tại
+          await firestoreInstance
+              .collection('diem')
+              .doc('${result['mssv']}_$_selectedMonHoc')
+              .set({
+            'maDiem': '${result['mssv']}_$_selectedMonHoc',
+            'maSV': result['mssv']!,
+            'maMon': _selectedMonHoc,
+            'diemGiuaKy': 0.0,
+            'diemCuoiKy': 0.0,
+            'heSoGiuaKy': 0.4,
+            'heSoCuoiKy': 0.6,
+          });
+
           await _loadStudentDataFromFirestore();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
