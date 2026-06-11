@@ -4,11 +4,13 @@ import 'app_colors.dart';
 class PageHeaderWidget extends StatelessWidget {
   final VoidCallback onAddStudent;
   final VoidCallback onSaveAll;
+  final VoidCallback? onEnsureAccounts;
 
   const PageHeaderWidget({
     super.key,
     required this.onAddStudent,
     required this.onSaveAll,
+    this.onEnsureAccounts,
   });
 
   @override
@@ -45,6 +47,22 @@ class PageHeaderWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
+            if (onEnsureAccounts != null) ...[
+              ElevatedButton.icon(
+                onPressed: onEnsureAccounts,
+                icon: const Icon(Icons.security_update_good),
+                label: const Text('Tạo TK'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+            ],
             ElevatedButton.icon(
               onPressed: onSaveAll,
               icon: const Icon(Icons.save),

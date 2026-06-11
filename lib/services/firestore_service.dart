@@ -53,7 +53,12 @@ class FirestoreService {
   /// Thêm sinh viên vào Firestore
   Future<bool> addSinhVien(SinhVien sinhVien) async {
     try {
-      await _db.collection('sinh_vien').doc(sinhVien.maSV).set({
+      final sinhVienRef = _db.collection('sinh_vien').doc(sinhVien.maSV);
+      final taiKhoanRef = _db.collection('tai_khoan').doc(sinhVien.maSV);
+
+      // Use batch to create both sinh_vien and tai_khoan atomically
+      WriteBatch batch = _db.batch();
+      batch.set(sinhVienRef, {
         'maSV': sinhVien.maSV,
         'hoTen': sinhVien.hoTen,
         'lop': sinhVien.lop,
@@ -61,6 +66,21 @@ class FirestoreService {
         'sdt': sinhVien.sdt,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      // create account with username/password = maSV if not exists
+      final tkDoc = await taiKhoanRef.get();
+      if (!tkDoc.exists) {
+        batch.set(taiKhoanRef, {
+          'maTK': 'TK_${sinhVien.maSV}',
+          'maSV': sinhVien.maSV,
+          'tenDangNhap': sinhVien.maSV,
+          'matKhau': sinhVien.maSV,
+          'vaiTro': 'sinhvien',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
       return true;
     } catch (e) {
       debugPrint('Error adding sinh vien: $e');
@@ -217,5 +237,47 @@ class FirestoreService {
               .map((doc) => Diem.fromFirestore(doc.data()))
               .toList(),
         );
+  }
+
+  /// Ensure every `sinh_vien` has a corresponding `tai_khoan` document.
+  /// Returns the number of accounts created.
+  Future<int> ensureAccountsForAllSinhVien() async {
+    try {
+      final svSnapshot = await _db.collection('sinh_vien').get();
+      final tkSnapshot = await _db.collection('tai_khoan').get();
+
+      final existingMaSV = tkSnapshot.docs
+          .map((d) => (d.data()['maSV'] ?? d.id).toString())
+          .toSet();
+
+      final batch = _db.batch();
+      int created = 0;
+
+      for (var svDoc in svSnapshot.docs) {
+        final data = svDoc.data();
+        final maSV = (data['maSV'] ?? svDoc.id).toString();
+        if (existingMaSV.contains(maSV)) continue;
+
+        final tkRef = _db.collection('tai_khoan').doc(maSV);
+        batch.set(tkRef, {
+          'maTK': 'TK_$maSV',
+          'maSV': maSV,
+          'tenDangNhap': maSV,
+          'matKhau': maSV,
+          'vaiTro': 'sinhvien',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        created++;
+      }
+
+      if (created > 0) await batch.commit();
+      debugPrint(
+        'FirestoreService: created $created missing tai_khoan documents.',
+      );
+      return created;
+    } catch (e) {
+      debugPrint('Error ensuring accounts for all sinh vien: $e');
+      return 0;
+    }
   }
 }

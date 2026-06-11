@@ -18,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<LichHocHienThi>> _lichFuture;
   late Future<List<dynamic>> _keHoachFuture;
+  late Future<Map<String, dynamic>> _dataFuture;
 
   @override
   void initState() {
@@ -27,21 +28,28 @@ class _HomeScreenState extends State<HomeScreen> {
     _keHoachFuture = LichHocService()
         .layKeHoachTheoSinhVien(maSV)
         .then((v) => v);
+    _dataFuture =
+        Future.wait([
+          _lichFuture,
+          DiemService().layDiemTheoSinhVienAsync(maSV),
+          _keHoachFuture,
+        ]).then(
+          (values) => {
+            'lich': values[0],
+            'diem': values[1],
+            'kehoach': values[2],
+          },
+        );
   }
 
   @override
   Widget build(BuildContext context) {
     final maSV = SessionService.layMaSV();
     final sinhVien = SinhVienService().laySinhVienTheoMa(maSV);
-    final dsDiem = DiemService().layDiemTheoSinhVien(maSV);
-    final gpa10 = TinhToanHocTap.tinhGPAHe10(dsDiem);
-    final tongTin = TinhToanHocTap.tinhTongTin(dsDiem);
-    final xepLoai = TinhToanHocTap.xepLoaiHocLuc(gpa10);
-
-    return FutureBuilder<List<LichHocHienThi>>(
-      future: _lichFuture,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _dataFuture,
+      builder: (context, snap) {
+        if (!snap.hasData) {
           return Scaffold(
             backgroundColor: ThemeApp.mauNen,
             appBar: AppBar(
@@ -52,7 +60,14 @@ class _HomeScreenState extends State<HomeScreen> {
             body: const Center(child: CircularProgressIndicator()),
           );
         }
-        final dsLich = snapshot.data!;
+
+        final dsLich = (snap.data!['lich'] as List<LichHocHienThi>);
+        final dsDiem = (snap.data!['diem'] as List<DiemMonHienThi>);
+        final dsKeHoach = (snap.data!['kehoach'] as List<dynamic>);
+        final gpa10 = TinhToanHocTap.tinhGPAHe10(dsDiem);
+        final tongTin = TinhToanHocTap.tinhTongTin(dsDiem);
+        final xepLoai = TinhToanHocTap.xepLoaiHocLuc(gpa10);
+
         final lichHomNay = dsLich
             .where(
               (item) =>
@@ -60,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   LichHocService().tenThu(DateTime.now().weekday),
             )
             .toList();
+
         return Scaffold(
           backgroundColor: ThemeApp.mauNen,
           appBar: AppBar(
@@ -134,35 +150,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 18),
                   const _SectionTitle(title: 'Kế hoạch ôn tập'),
                   const SizedBox(height: 10),
-                  FutureBuilder<List<dynamic>>(
-                    future: _keHoachFuture,
-                    builder: (context, snapKe) {
-                      if (!snapKe.hasData) {
-                        return const Center(
-                          child: SizedBox(
-                            height: 40,
-                            width: 40,
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-                      final dsKeHoach = snapKe.data ?? <dynamic>[];
-                      if (dsKeHoach.isEmpty)
-                        return const _EmptyBox(text: 'Chưa có kế hoạch ôn tập');
-                      return Column(
-                        children: dsKeHoach
-                            .map(
-                              (keHoach) => _KeHoachCard(
-                                tieuDe: keHoach.tieuDe,
-                                noiDung: keHoach.noiDung,
-                                ngayOnTap: keHoach.ngayOnTap,
-                                trangThai: keHoach.trangThai,
-                              ),
-                            )
-                            .toList(),
-                      );
-                    },
-                  ),
+                  if (dsKeHoach.isEmpty)
+                    const _EmptyBox(text: 'Chưa có kế hoạch ôn tập')
+                  else
+                    ...dsKeHoach.map(
+                      (keHoach) => _KeHoachCard(
+                        tieuDe: keHoach.tieuDe,
+                        noiDung: keHoach.noiDung,
+                        ngayOnTap: keHoach.ngayOnTap,
+                        trangThai: keHoach.trangThai,
+                      ),
+                    ),
                   const SizedBox(height: 18),
                   const _SectionTitle(title: 'Môn học đang theo dõi'),
                   const SizedBox(height: 10),

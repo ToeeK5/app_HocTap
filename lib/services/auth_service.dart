@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../data/app_data.dart';
 import '../models/tai_khoan.dart';
 
@@ -15,6 +16,35 @@ class AuthService {
             (tk.tenDangNhap.trim() == user || tk.maSV.trim() == user) &&
             tk.matKhau.trim() == pass,
       );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Firestore-backed async login
+  Future<TaiKhoan?> dangNhapAsync(String taiKhoan, String matKhau) async {
+    final user = taiKhoan.trim();
+    final pass = matKhau.trim();
+    try {
+      final db = FirebaseFirestore.instance;
+      // Try to find by tenDangNhap or maSV and matching password
+      final q1 = await db
+          .collection('tai_khoan')
+          .where('tenDangNhap', isEqualTo: user)
+          .where('matKhau', isEqualTo: pass)
+          .limit(1)
+          .get();
+      if (q1.docs.isNotEmpty)
+        return TaiKhoan.fromFirestore(q1.docs.first.data());
+      final q2 = await db
+          .collection('tai_khoan')
+          .where('maSV', isEqualTo: user)
+          .where('matKhau', isEqualTo: pass)
+          .limit(1)
+          .get();
+      if (q2.docs.isNotEmpty)
+        return TaiKhoan.fromFirestore(q2.docs.first.data());
+      return null;
     } catch (e) {
       return null;
     }

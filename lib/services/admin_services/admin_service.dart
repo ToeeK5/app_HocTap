@@ -23,19 +23,31 @@ class AdminService {
   }) async {
     try {
       debugPrint('AdminService: Checking if student with maSV: $maSV exists.');
-      DocumentSnapshot doc = await _db
-          .collection('sinh_vien')
-          .doc(maSV)
-          .get(const GetOptions(source: Source.server));
+      final sinhVienRef = _db.collection('sinh_vien').doc(maSV);
+      final taiKhoanRef = _db.collection('tai_khoan').doc(maSV);
 
-      debugPrint('AdminService: doc.exists = ${doc.exists}');
-      if (doc.exists) {
+      // Check existence of student
+      DocumentSnapshot sinhDoc = await sinhVienRef.get(
+        const GetOptions(source: Source.server),
+      );
+      debugPrint('AdminService: sinhDoc.exists = ${sinhDoc.exists}');
+      if (sinhDoc.exists) {
         debugPrint('AdminService: Sinh viên $maSV đã tồn tại!');
-        return false; // Chỉ trả về false khi TRÙNG MÃ THỰC SỰ
+        return false; // duplicate student id
       }
 
-      // Thêm sinh viên mới
-      await _db.collection('sinh_vien').doc(maSV).set({
+      // Check whether an account already exists for this maSV (by document id)
+      DocumentSnapshot tkDoc = await taiKhoanRef.get(
+        const GetOptions(source: Source.server),
+      );
+      debugPrint(
+        'AdminService: existing account for maSV exists = ${tkDoc.exists}',
+      );
+
+      // Prepare batch to create both sinh_vien and tai_khoan atomically
+      WriteBatch batch = _db.batch();
+
+      batch.set(sinhVienRef, {
         'maSV': maSV,
         'hoTen': hoTen,
         'lop': lop,
@@ -43,11 +55,29 @@ class AdminService {
         'sdt': sdt ?? '',
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      // Create account only if it doesn't already exist
+      if (!tkDoc.exists) {
+        final mapTk = {
+          'maTK': 'TK_$maSV',
+          'maSV': maSV,
+          'tenDangNhap': maSV,
+          'matKhau': maSV,
+          'vaiTro': 'sinhvien',
+          'createdAt': FieldValue.serverTimestamp(),
+        };
+        batch.set(taiKhoanRef, mapTk);
+      } else {
+        debugPrint(
+          'AdminService: tai_khoan for $maSV already exists; skipping account creation.',
+        );
+      }
+
+      await batch.commit();
       return true;
     } catch (e) {
       debugPrint('Error adding single sinh vien: $e');
-      // SỬA DÒNG NÀY: Thay vì 'return false;', hãy đổi thành 'rethrow;'
-      rethrow; // Ném lỗi này ra màn hình UI xử lý
+      rethrow; // bubble up so UI can show a failure
     }
   }
 

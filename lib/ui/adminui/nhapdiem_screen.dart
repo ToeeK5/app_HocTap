@@ -43,8 +43,10 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       });
 
       // 1. Lấy danh sách môn học từ collection 'mon_hoc' trên Firestore
-      QuerySnapshot subjectSnapshot = await firestoreInstance.collection('mon_hoc').get();
-      
+      QuerySnapshot subjectSnapshot = await firestoreInstance
+          .collection('mon_hoc')
+          .get();
+
       List<String> clearListSubject = [];
       for (var doc in subjectSnapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
@@ -96,13 +98,11 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       });
       return;
     }
-    
+
     try {
       final targetMon = _selectedMonHoc.trim();
-
       // Lấy danh sách sinh viên từ Firestore
-      List<SinhVien> allSinhVien = await _firestoreService.getSinhVienList();
-
+      final allSinhVien = await _firestoreService.getSinhVienList();
       if (allSinhVien.isEmpty) {
         print('Không có sinh viên nào trong Firestore');
         setState(() {
@@ -139,7 +139,8 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
             maDiem: '${sv.maSV}_$targetMon',
             maSV: sv.maSV,
             maMon: targetMon,
-            diemGiuaKy: 0.0, // Để mặc định null hoặc 0.0 tùy thuộc vào Model của bạn
+            diemGiuaKy:
+                0.0, // Để mặc định null hoặc 0.0 tùy thuộc vào Model của bạn
             diemCuoiKy: 0.0,
             heSoGiuaKy: 0.4,
             heSoCuoiKy: 0.6,
@@ -152,8 +153,8 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
           'mssv': sv.maSV,
           'ten': sv.hoTen,
           'lop': sv.lop,
-          'gk': diem.diemGiuaKy ?? 0.0,
-          'ck': diem.diemCuoiKy ?? 0.0,
+          'gk': diem.diemGiuaKy,
+          'ck': diem.diemCuoiKy,
         });
       }
 
@@ -184,8 +185,12 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
     _controllers = {};
     for (int i = 0; i < _studentData.length; i++) {
-      double gkVal = _studentData[i]['gk'] is double ? _studentData[i]['gk'] : 0.0;
-      double ckVal = _studentData[i]['ck'] is double ? _studentData[i]['ck'] : 0.0;
+      double gkVal = _studentData[i]['gk'] is double
+          ? _studentData[i]['gk']
+          : 0.0;
+      double ckVal = _studentData[i]['ck'] is double
+          ? _studentData[i]['ck']
+          : 0.0;
 
       _controllers[i] = {
         'gk': TextEditingController(
@@ -217,7 +222,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
     if (result != null && mounted) {
       try {
         print('DEBUG: Attempting to add student...');
-        
+
         bool success = await _adminService.addSingleSinhVien(
           maSV: result['mssv']!,
           hoTen: result['ten']!,
@@ -235,7 +240,9 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Lỗi: Mã số sinh viên (MSSV) này đã tồn tại trên hệ thống!'),
+              content: Text(
+                'Lỗi: Mã số sinh viên (MSSV) này đã tồn tại trên hệ thống!',
+              ),
               backgroundColor: Colors.redAccent,
             ),
           );
@@ -311,11 +318,13 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
   void _updateScore(int index, String field, String value) {
     setState(() {
       if (field == 'gk') {
-        _studentData[index]['gk'] =
-            value.isEmpty ? 0.0 : double.tryParse(value) ?? 0.0;
+        _studentData[index]['gk'] = value.isEmpty
+            ? 0.0
+            : double.tryParse(value) ?? 0.0;
       } else if (field == 'ck') {
-        _studentData[index]['ck'] =
-            value.isEmpty ? 0.0 : double.tryParse(value) ?? 0.0;
+        _studentData[index]['ck'] = value.isEmpty
+            ? 0.0
+            : double.tryParse(value) ?? 0.0;
       }
     });
   }
@@ -327,20 +336,26 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
       for (int i = 0; i < _studentData.length; i++) {
         var student = _studentData[i];
-        double gk = double.tryParse(_controllers[i]?['gk']?.text ?? '') ?? (student['gk'] as double);
-        double ck = double.tryParse(_controllers[i]?['ck']?.text ?? '') ?? (student['ck'] as double);
+        double gk =
+            double.tryParse(_controllers[i]?['gk']?.text ?? '') ??
+            (student['gk'] as double);
+        double ck =
+            double.tryParse(_controllers[i]?['ck']?.text ?? '') ??
+            (student['ck'] as double);
 
         // Chỉ đưa vào danh sách nếu có nhập điểm lớn hơn 0
         if (gk > 0 || ck > 0) {
-          diemList.add(Diem(
-            maDiem: '${student['mssv']}_$_selectedMonHoc',
-            maSV: student['mssv'] as String,
-            maMon: _selectedMonHoc,
-            diemGiuaKy: gk,
-            diemCuoiKy: ck,
-            heSoGiuaKy: 0.4,
-            heSoCuoiKy: 0.6,
-          ));
+          diemList.add(
+            Diem(
+              maDiem: '${student['mssv']}_$_selectedMonHoc',
+              maSV: student['mssv'] as String,
+              maMon: _selectedMonHoc,
+              diemGiuaKy: gk,
+              diemCuoiKy: ck,
+              heSoGiuaKy: 0.4,
+              heSoCuoiKy: 0.6,
+            ),
+          );
         }
       }
 
@@ -359,7 +374,9 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lưu ${diemList.length} điểm thành công vào Firebase!'),
+            content: Text(
+              'Lưu ${diemList.length} điểm thành công vào Firebase!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -373,10 +390,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.redAccent),
       );
     }
   }
@@ -417,9 +431,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
               children: [
                 TopBarWidget(isDesktop: isDesktop),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: _buildMainContent(),
-                  ),
+                  child: SingleChildScrollView(child: _buildMainContent()),
                 ),
               ],
             ),
@@ -435,6 +447,15 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
           PageHeaderWidget(
             onAddStudent: _addStudent,
             onSaveAll: _saveAllScores,
+            onEnsureAccounts: () async {
+              // ensure accounts exist for all students
+              final firestore = FirestoreService();
+              final created = await firestore.ensureAccountsForAllSinhVien();
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Đã tạo $created tài khoản còn thiếu.')),
+              );
+            },
           ),
           const SizedBox(height: 24),
           FilterAndStatsWidget(
