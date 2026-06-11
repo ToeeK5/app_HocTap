@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/sinh_vien.dart';
 import '../../models/diem.dart';
+import '../../../models/mon_hoc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../services/firestore_service.dart';
 import '../../services/admin_services/admin_service.dart';
@@ -20,7 +21,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
   int _currentPage = 1;
   String _selectedMonHoc = '';
-  List<String> _danhSachMonHoc = [];
+  List<MonHoc> _danhSachMonHoc = [];
 
   late List<Map<String, dynamic>> _studentData;
   late Map<int, Map<String, TextEditingController>> _controllers;
@@ -42,27 +43,13 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
         _isLoading = true;
       });
 
-      // 1. Lấy danh sách môn học từ collection 'mon_hoc' trên Firestore
-      QuerySnapshot subjectSnapshot = await firestoreInstance
-          .collection('mon_hoc')
-          .get();
-
-      List<String> clearListSubject = [];
-      for (var doc in subjectSnapshot.docs) {
-        var data = doc.data() as Map<String, dynamic>;
-        // Ưu tiên lấy trường 'maMH' làm mã môn học
-        if (data.containsKey('maMH') && data['maMH'] != null) {
-          clearListSubject.add(data['maMH'].toString().trim());
-        } else if (data.containsKey('maMon') && data['maMon'] != null) {
-          clearListSubject.add(data['maMon'].toString().trim());
-        }
-      }
-
-      if (clearListSubject.isNotEmpty) {
-        clearListSubject.sort(); // Sắp xếp danh sách môn học tăng dần
+      // 1. Lấy danh sách môn học từ service (collection 'mon_hoc')
+      final monHocList = await _firestoreService.getDanhSachMonHoc();
+      if (monHocList.isNotEmpty) {
+        monHocList.sort((a, b) => a.maMon.compareTo(b.maMon));
         setState(() {
-          _danhSachMonHoc = clearListSubject;
-          _selectedMonHoc = _danhSachMonHoc.first;
+          _danhSachMonHoc = monHocList;
+          _selectedMonHoc = _danhSachMonHoc.first.maMon;
         });
       }
 

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'score_utils.dart';
+import '../../../models/mon_hoc.dart';
 
 class FilterAndStatsWidget extends StatelessWidget {
   final String selectedMonHoc;
-  final List<String> danhSachMonHoc;
+  final List<MonHoc> danhSachMonHoc;
   final List<Map<String, dynamic>> studentData;
   final Function(String) onMonHocChanged;
 
@@ -24,10 +25,7 @@ class FilterAndStatsWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Filters Card (chỉ chọn môn học)
-        Expanded(
-          flex: 2,
-          child: _buildFiltersCard(),
-        ),
+        Expanded(flex: 2, child: _buildFiltersCard()),
         const SizedBox(width: 24),
         // Stats Cards (side-by-side)
         Expanded(
@@ -83,10 +81,12 @@ class FilterAndStatsWidget extends StatelessWidget {
             label: 'Môn học',
             value: selectedMonHoc.isNotEmpty ? selectedMonHoc : null,
             items: danhSachMonHoc
-                .map((maMon) => DropdownMenuItem<String>(
-                      value: maMon,
-                      child: Text(maMon),
-                    ))
+                .map(
+                  (mon) => DropdownMenuItem<String>(
+                    value: mon.maMon,
+                    child: Text('${mon.maMon} - ${mon.tenMon}'),
+                  ),
+                )
                 .toList(),
             onChanged: (v) {
               if (v != null) onMonHocChanged(v);
@@ -106,13 +106,7 @@ class FilterAndStatsWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         const SizedBox(height: 4),
         Container(
           decoration: BoxDecoration(

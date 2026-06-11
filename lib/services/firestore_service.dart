@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/sinh_vien.dart';
 import '../models/diem.dart';
+import '../models/mon_hoc.dart';
 
 class FirestoreService {
   static final FirestoreService _instance = FirestoreService._internal();
@@ -211,6 +212,17 @@ class FirestoreService {
     }
   }
 
+  /// Lấy danh sách môn học từ Firestore
+  Future<List<MonHoc>> getDanhSachMonHoc() async {
+    try {
+      final qs = await _db.collection('mon_hoc').get();
+      return qs.docs.map((d) => MonHoc.fromMap(d.data())).toList();
+    } catch (e) {
+      debugPrint('Error getting danh sach mon hoc: $e');
+      return [];
+    }
+  }
+
   // ==================== STREAMERS ====================
 
   /// Stream danh sách sinh viên theo lớp
@@ -280,4 +292,6 @@ class FirestoreService {
       return 0;
     }
   }
+
+  //Lay mon hoc theo ma mon
 }

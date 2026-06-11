@@ -10,6 +10,7 @@ import '../widgets/bottom_nav_app.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/bieu_do_diem.dart';
 import '../utils/mau_hoc_tap.dart';
+import '../models/sinh_vien.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -24,11 +25,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final maSV = SessionService.layMaSV();
-    final sinhVien = SinhVienService().laySinhVienTheoMa(maSV);
-    return FutureBuilder<List<DiemMonHienThi>>(
-      future: DiemService().layDiemTheoSinhVienAsync(maSV),
+
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([
+        SinhVienService().laySinhVienTheoMaAsync(maSV),
+        DiemService().layDiemTheoSinhVienAsync(maSV),
+      ]),
       builder: (context, snap) {
-        final dsDiem = snap.data ?? <DiemMonHienThi>[];
+        if (!snap.hasData) {
+          return Scaffold(
+            backgroundColor: ThemeApp.mauNen,
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: const Text("Trang cá nhân"),
+              backgroundColor: ThemeApp.mauNen,
+              foregroundColor: ThemeApp.chuDam,
+              elevation: 0,
+            ),
+            body: const Center(child: CircularProgressIndicator()),
+            bottomNavigationBar: const BottomNavApp(currentIndex: 3),
+          );
+        }
+
+        final sinhVien = snap.data![0] as SinhVien?;
+        final dsDiem = snap.data![1] as List<DiemMonHienThi>;
         final gpa10 = TinhToanHocTap.tinhGPAHe10(dsDiem);
         final gpa4 = TinhToanHocTap.tinhGPAHe4(gpa10);
         final tongTin = TinhToanHocTap.tinhTongTin(dsDiem);

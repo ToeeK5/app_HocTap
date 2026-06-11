@@ -7,6 +7,7 @@ import '../utils/theme_app.dart';
 import '../utils/tinh_toan_hoc_tap.dart';
 import '../widgets/bottom_nav_app.dart';
 import '../widgets/stat_card.dart';
+import '../models/sinh_vien.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,21 +24,26 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+
     final maSV = SessionService.layMaSV();
+
     _lichFuture = LichHocService().layLichTheoSinhVien(maSV);
     _keHoachFuture = LichHocService()
         .layKeHoachTheoSinhVien(maSV)
         .then((v) => v);
+
     _dataFuture =
         Future.wait([
+          SinhVienService().laySinhVienTheoMaAsync(maSV),
           _lichFuture,
           DiemService().layDiemTheoSinhVienAsync(maSV),
           _keHoachFuture,
         ]).then(
           (values) => {
-            'lich': values[0],
-            'diem': values[1],
-            'kehoach': values[2],
+            'sinhVien': values[0],
+            'lich': values[1],
+            'diem': values[2],
+            'kehoach': values[3],
           },
         );
   }
@@ -45,7 +51,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final maSV = SessionService.layMaSV();
-    final sinhVien = SinhVienService().laySinhVienTheoMa(maSV);
     return FutureBuilder<Map<String, dynamic>>(
       future: _dataFuture,
       builder: (context, snap) {
@@ -61,6 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
 
+        final sinhVien = snap.data!['sinhVien'] as SinhVien?;
         final dsLich = (snap.data!['lich'] as List<LichHocHienThi>);
         final dsDiem = (snap.data!['diem'] as List<DiemMonHienThi>);
         final dsKeHoach = (snap.data!['kehoach'] as List<dynamic>);

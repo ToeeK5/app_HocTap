@@ -17,8 +17,12 @@ class SinhVienService {
     try {
       final db = FirebaseFirestore.instance;
       final doc = await db.collection('sinh_vien').doc(maSV).get();
+
       if (!doc.exists || doc.data() == null) return null;
-      return SinhVien.fromFirestore(doc.data()!);
+
+      final data = doc.data()!;
+
+      return SinhVien.fromFirestore({...data, 'maSV': data['maSV'] ?? doc.id});
     } catch (e) {
       return null;
     }
