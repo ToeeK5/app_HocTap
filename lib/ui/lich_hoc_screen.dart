@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/sinh_vien.dart';
 import '../services/lich_hoc_service.dart';
 import '../services/session_service.dart';
 import '../services/sinh_vien_service.dart';
@@ -16,87 +17,170 @@ class LichHocScreen extends StatefulWidget {
 class _LichHocScreenState extends State<LichHocScreen> {
   int? hocKyDangChon;
   bool chiHomNay = false;
+  late Future<_LichHocData> futureLichHoc;
+
+  @override
+  void initState() {
+    super.initState();
+    futureLichHoc = _loadData();
+  }
+
+  Future<_LichHocData> _loadData() async {
+    final maSV = SessionService.layMaSV();
+
+    final sinhVien = await SinhVienService().laySinhVienTheoMa(maSV);
+    final dsTatCa = await LichHocService().layLichTheoSinhVien(maSV);
+
+    return _LichHocData(
+      sinhVien: sinhVien,
+      dsTatCa: dsTatCa,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final maSV = SessionService.layMaSV();
-    final sinhVien = null;
-    final service = LichHocService();
-    final dsTatCa = service.layLichTheoSinhVien(maSV);
-    final dsHocKy = _danhSachHocKy(dsTatCa, null);
-final hocKy = hocKyDangChon ?? (dsHocKy.isEmpty ? null : dsHocKy.first);
-
-    var dsHienThi = dsTatCa;
-    if (hocKy != null) {
-      dsHienThi = dsHienThi.where((item) => item.monHoc.hocKy == hocKy).toList();
-    }
-    if (chiHomNay) {
-      final thuHomNay = service.tenThu(DateTime.now().weekday);
-      dsHienThi = dsHienThi
-          .where((item) => item.lichHoc.thu == thuHomNay)
-          .toList();
-    }
-    dsHienThi = service.sapXepLich(dsHienThi);
 
     return Scaffold(
       backgroundColor: ThemeApp.mauNen,
-      appBar: AppBar(automaticallyImplyLeading:false,
-        title: const Text('Lịch học'),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        title: const Text(
+          'LỊCH HỌC',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+            color: ThemeApp.chuDam,
+          ),
+        ),
         backgroundColor: ThemeApp.mauNen,
         foregroundColor: ThemeApp.chuDam,
         elevation: 0,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _ThongTinSinhVien(
-                ten: 'Sinh viên',
-                maSV: maSV,
-                lop: '',
-                hocKy: hocKy ?? 0,
+        child: FutureBuilder<_LichHocData>(
+          future: futureLichHoc,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!snapshot.hasData) {
+              return const Center(child: Text("Không tải được lịch học"));
+            }
+
+            final sinhVien = snapshot.data!.sinhVien;
+            final dsTatCa = snapshot.data!.dsTatCa;
+
+            final dsHocKy = _danhSachHocKy(
+              dsTatCa,
+              sinhVien?.hocKyHienTai,
+            );
+
+            final hocKy = hocKyDangChon ??
+                sinhVien?.hocKyHienTai ??
+                (dsHocKy.isEmpty ? null : dsHocKy.first);
+
+            var dsHienThi = dsTatCa;
+
+            if (hocKy != null) {
+              dsHienThi = dsHienThi
+                  .where((item) => item.monHoc.hocKy == hocKy)
+                  .toList();
+            }
+
+            if (chiHomNay) {
+              final thuHomNay = LichHocService().tenThu(DateTime.now().weekday);
+              dsHienThi = dsHienThi
+                  .where((item) => item.lichHoc.thu == thuHomNay)
+                  .toList();
+            }
+
+            dsHienThi = LichHocService().sapXepLich(dsHienThi);
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _ThongTinSinhVien(
+                    ten: sinhVien?.hoTen ?? 'Sinh viên',
+                    maSV: maSV,
+                    lop: sinhVien?.lop ?? '',
+                    hocKy: sinhVien?.hocKyHienTai ?? 0,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  _BoLoc(
+                    hocKyDangChon: hocKy,
+                    danhSachHocKy: dsHocKy,
+                    chiHomNay: chiHomNay,
+                    onChonHocKy: (value) {
+                      setState(() {
+                        hocKyDangChon = value;
+                      });
+                    },
+                    onDoiHomNay: (value) {
+                      setState(() {
+                        chiHomNay = value;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Text(
+                    chiHomNay ? 'Lịch học hôm nay' : 'Lịch học trong tuần',
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                      color: ThemeApp.chuDam,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  if (dsHienThi.isEmpty)
+                    const _EmptyBox(text: 'Không có lịch học phù hợp')
+                  else
+                    ...dsHienThi.map((item) => _LichHocCard(item: item)),
+                ],
               ),
-              const SizedBox(height: 16),
-              _BoLoc(
-                hocKyDangChon: hocKy,
-                danhSachHocKy: dsHocKy,
-                chiHomNay: chiHomNay,
-                onChonHocKy: (value) => setState(() => hocKyDangChon = value),
-                onDoiHomNay: (value) => setState(() => chiHomNay = value),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                chiHomNay ? 'Lịch học hôm nay' : 'Lịch học trong tuần',
-                style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: ThemeApp.chuDam,
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (dsHienThi.isEmpty)
-                const _EmptyBox(text: 'Không có lịch học phù hợp')
-              else
-                ...dsHienThi.map((item) => _LichHocCard(item: item)),
-            ],
-          ),
+            );
+          },
         ),
       ),
       bottomNavigationBar: const BottomNavApp(currentIndex: 1),
     );
   }
 
-  List<int> _danhSachHocKy(List<LichHocHienThi> dsLich, int? hocKyHienTai) {
+  List<int> _danhSachHocKy(
+    List<LichHocHienThi> dsLich,
+    int? hocKyHienTai,
+  ) {
     final danhSach = dsLich.map((item) => item.monHoc.hocKy).toSet().toList()
       ..sort();
+
     if (hocKyHienTai != null && !danhSach.contains(hocKyHienTai)) {
       danhSach.add(hocKyHienTai);
       danhSach.sort();
     }
+
     return danhSach;
   }
+}
+
+class _LichHocData {
+  final SinhVien? sinhVien;
+  final List<LichHocHienThi> dsTatCa;
+
+  _LichHocData({
+    required this.sinhVien,
+    required this.dsTatCa,
+  });
 }
 
 class _ThongTinSinhVien extends StatelessWidget {
@@ -137,7 +221,9 @@ class _ThongTinSinhVien extends StatelessWidget {
               size: 32,
             ),
           ),
+
           const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,7 +236,9 @@ class _ThongTinSinhVien extends StatelessWidget {
                     color: ThemeApp.chuDam,
                   ),
                 ),
+
                 const SizedBox(height: 4),
+
                 Text(
                   '$maSV - Lớp $lop - Học kỳ $hocKy',
                   style: const TextStyle(color: ThemeApp.chuPhu),
@@ -210,7 +298,9 @@ class _BoLoc extends StatelessWidget {
               onChanged: onChonHocKy,
             ),
           ),
+
           const SizedBox(width: 12),
+
           FilterChip(
             label: const Text('Hôm nay'),
             selected: chiHomNay,
@@ -227,7 +317,9 @@ class _BoLoc extends StatelessWidget {
 class _LichHocCard extends StatelessWidget {
   final LichHocHienThi item;
 
-  const _LichHocCard({required this.item});
+  const _LichHocCard({
+    required this.item,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -254,8 +346,13 @@ class _LichHocCard extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const Icon(Icons.calendar_month_rounded, color: ThemeApp.mauIcon),
+                const Icon(
+                  Icons.calendar_month_rounded,
+                  color: ThemeApp.mauIcon,
+                ),
+
                 const SizedBox(height: 6),
+
                 Text(
                   lich.thu.replaceFirst('Thứ ', 'T'),
                   style: const TextStyle(
@@ -266,7 +363,9 @@ class _LichHocCard extends StatelessWidget {
               ],
             ),
           ),
+
           const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -279,7 +378,9 @@ class _LichHocCard extends StatelessWidget {
                     color: ThemeApp.chuDam,
                   ),
                 ),
+
                 const SizedBox(height: 6),
+
                 Text(
                   '${lich.gioBatDau} - ${lich.gioKetThuc}',
                   style: const TextStyle(
@@ -287,7 +388,9 @@ class _LichHocCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 6),
+
                 Text(
                   '${mon.maMon} - ${mon.soTinChi} tín chỉ - Phòng ${lich.phongHoc}',
                   style: const TextStyle(color: ThemeApp.chuPhu),
@@ -304,7 +407,9 @@ class _LichHocCard extends StatelessWidget {
 class _EmptyBox extends StatelessWidget {
   final String text;
 
-  const _EmptyBox({required this.text});
+  const _EmptyBox({
+    required this.text,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -324,6 +429,3 @@ class _EmptyBox extends StatelessWidget {
     );
   }
 }
-
-
-
