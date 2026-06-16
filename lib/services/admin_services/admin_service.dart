@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/sinh_vien.dart';
+import '../../models/lop.dart';
+import '../../models/hoc_ki.dart';
 
 class AdminService {
   static final AdminService _instance = AdminService._internal();
@@ -48,6 +50,49 @@ class AdminService {
       // SỬA DÒNG NÀY: Thay vì 'return false;', hãy đổi thành 'rethrow;'
       rethrow; // Ném lỗi này ra màn hình UI xử lý
     }
+  }
+
+  // Lấy danh sách Lớp (Future hoặc bạn có thể dùng Stream tương tự môn học)
+ Future<List<Lop>> getDanhSachLop() async {
+    try {
+      print('AdminService: Fetching class list...');
+      QuerySnapshot snapshot = await _db.collection('lop').get();
+      return snapshot.docs.map((doc) {
+        var data = doc.data() as Map<String, dynamic>;
+        return Lop(
+          id: doc.id,
+          //  SỬA TẠI ĐÂY: Đổi từ 'ten_lop' thành 'tenLop'
+          tenLop: data['tenlop'] ?? '', 
+        );
+      }).toList();
+    } catch (e) {
+      print('Error getting danh sach lop: $e');
+      return [];
+    }
+  }
+
+  // Lấy danh sách Học Kỳ (Sắp xếp tăng dần theo giá trị số)
+  Future<List<HocKy>> getDanhSachHocKy() async {
+    var snapshot = await _db.collection('hoc_ky').orderBy('value').get();
+    return snapshot.docs.map((doc) => HocKy.fromFirestore(doc.id, doc.data())).toList();
+  }
+
+  // Hàm thêm nhanh Lớp mới
+  Future<void> addLop(String idLop, String tenLop) async {
+    // Sử dụng .doc(idLop).set(...) để lấy idLop làm ID của document
+    await _db.collection('lop').doc(idLop).set({
+      'ID': idLop,
+      'tenlop': tenLop,
+    });
+  }
+
+  // Hàm thêm nhanh Học Kỳ mới
+  Future<void> addHocKy(String idHocKy, String tenHocKy, int value) async {
+    await _db.collection('hoc_ky').doc(idHocKy).set({
+      'ID': idHocKy,
+      'tenHocKy': tenHocKy, 
+      'value': value,
+    });
   }
 
   /// Lấy danh sách sinh viên theo lớp từ Firebase

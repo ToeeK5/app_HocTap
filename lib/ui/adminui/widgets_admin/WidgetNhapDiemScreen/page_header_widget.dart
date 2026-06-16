@@ -4,11 +4,15 @@ import 'app_colors.dart';
 class PageHeaderWidget extends StatelessWidget {
   final VoidCallback onAddStudent;
   final VoidCallback onSaveAll;
+  final VoidCallback onQuickAddLop;
+  final VoidCallback onQuickAddHocKy;
 
   const PageHeaderWidget({
     super.key,
     required this.onAddStudent,
     required this.onSaveAll,
+    required this.onQuickAddLop,
+    required this.onQuickAddHocKy,
   });
 
   @override
@@ -31,6 +35,21 @@ class PageHeaderWidget extends StatelessWidget {
         ),
         Row(
           children: [
+            // Nút thêm Lớp học nhanh
+            OutlinedButton.icon(
+              onPressed: onQuickAddLop,
+              icon: const Icon(Icons.domain_add),
+              label: const Text('Thêm lớp'),
+            ),
+            const SizedBox(width: 8),
+
+            // Nút thêm Học kỳ nhanh
+            OutlinedButton.icon(
+              onPressed: onQuickAddHocKy,
+              icon: const Icon(Icons.more_time),
+              label: const Text('Thêm học kỳ'),
+            ),
+            const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: onAddStudent,
               icon: const Icon(Icons.person_add),

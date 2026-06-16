@@ -110,19 +110,12 @@ class FirestoreService {
 
   /// Lấy danh sách điểm theo môn học
   Future<List<Diem>> getDiemByMonHoc(String maMon) async {
-    try {
-      QuerySnapshot querySnapshot = await _db
-          .collection('diem')
-          .where('maMon', isEqualTo: maMon)
-          .get();
-      return querySnapshot.docs
-          .map((doc) => Diem.fromFirestore(doc.data() as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      print('Error getting diem by mon hoc: $e');
-      return [];
-    }
-  }
+  QuerySnapshot snapshot = await _db
+      .collection('diem')
+      .where('maMon', isEqualTo: maMon)
+      .get();
+  return snapshot.docs.map((doc) => Diem.fromFirestore(doc.data() as Map<String, dynamic>)).toList();
+}
 
   /// Thêm hoặc cập nhật điểm
   Future<bool> saveDiem(Diem diem) async {
@@ -228,6 +221,7 @@ class FirestoreService {
         maDiem: doc.id,
         maSV: data['maSV'] ?? '',
         maMon: data['maMon'] ?? '',
+        hocKy: data['hocKy'] ?? '',
         diemGiuaKy: (data['diemGiuaKy'] ?? 0).toDouble(),
         diemCuoiKy: (data['diemCuoiKy'] ?? 0).toDouble(),
         heSoGiuaKy: (data['heSoGiuaKy'] ?? 0.4).toDouble(),

@@ -147,6 +147,12 @@ class TableSectionWidget extends StatelessWidget {
         ),
         DataColumn(
           label: Text(
+            'Hoc kỳ',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          ),
+        ),
+        DataColumn(
+          label: Text(
             'Giữa kỳ (0.4)',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
@@ -181,28 +187,40 @@ class TableSectionWidget extends StatelessWidget {
   }
 
   List<DataRow> _buildDataRows() {
-    return studentData.asMap().entries.map((entry) {
-      int index = entry.key;
-      Map<String, dynamic> data = entry.value;
+    int itemsPerPage = 4;
+    // Tìm vị trí bắt đầu lấy dữ liệu của trang hiện tại
+    int startIndex = (currentPage - 1) * itemsPerPage;
+    
+    // Cắt danh sách sinh viên chỉ lấy đúng các phần tử thuộc trang hiện tại
+    final pagedStudents = studentData.skip(startIndex).take(itemsPerPage).toList();
 
-        final row = StudentTableRow(
-        index: index,
+    return pagedStudents.asMap().entries.map((entry) {
+      int localIndex = entry.key;
+      Map<String, dynamic> data = entry.value;
+      
+      // Tính toán lại index gốc (global index) trong studentData tổng thể 
+      // để mapping chính xác với Map controllers nhận từ file cha
+      int globalIndex = startIndex + localIndex;
+
+      final row = StudentTableRow(
+        index: globalIndex, // Phải dùng index tổng để đồng bộ text controller
         stt: data['stt'] as int,
         mssv: data['mssv'] as String,
         ten: data['ten'] as String,
         lop: data['lop'] as String,
+        hocKy: data['hocKy'] as int,
         gk: data['gk'] as double,
         ck: data['ck'] as double,
-        gkController: controllers[index]?['gk'] ?? TextEditingController(),
-        ckController: controllers[index]?['ck'] ?? TextEditingController(),
+        gkController: controllers[globalIndex]?['gk'] ?? TextEditingController(),
+        ckController: controllers[globalIndex]?['ck'] ?? TextEditingController(),
         onUpdateScore: onUpdateScore,
-        onEdit: () => onEdit(index),
-        onDelete: () => onDelete(index),
+        onEdit: () => onEdit(globalIndex),
+        onDelete: () => onDelete(globalIndex),
       );
 
-        return row.toDataRow();
-      }).toList();
-    }
+      return row.toDataRow();
+    }).toList();
+  }
 
   Widget _buildTableFooter() {
     int totalStudents = studentData.length;
