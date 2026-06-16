@@ -42,6 +42,7 @@ class DayDuLieuFirestoreService {
         'maDiem': d.maDiem,
         'maSV': d.maSV,
         'maMon': d.maMon,
+        'hocKy': d.hocKy,
         'diemGiuaKy': d.diemGiuaKy,
         'diemCuoiKy': d.diemCuoiKy,
         'heSoGiuaKy': d.heSoGiuaKy,
@@ -71,91 +72,91 @@ class DayDuLieuFirestoreService {
         'trangThai': kh.trangThai,
       });
     }
-    
 
     await batch.commit();
   }
+
   Future<void> themDiemDayDuChoTatCaSinhVien() async {
-  final batch = db.batch();
+    final batch = db.batch();
 
-  final danhSachMaSV = [
-    '20120001','20120002','20120003','20120004','20120005',
-    '20120006','20120007','20120008','20120009','20120010',
-    '20120011','20120012','20120013','20120014','20120015',
-    '20120016','20120017','20120018','20120019','20120020',
-  ];
+    final danhSachMaSV = [
+      '20120001','20120002','20120003','20120004','20120005',
+      '20120006','20120007','20120008','20120009','20120010',
+      '20120011','20120012','20120013','20120014','20120015',
+      '20120016','20120017','20120018','20120019','20120020',
+    ];
 
-  final danhSachMon = ['MH001', 'MH002', 'MH003', 'MH004'];
+    final danhSachMon = ['MH001', 'MH002', 'MH003', 'MH004'];
 
-  int dem = 1;
+    final Map<String, int> mapHocKyCuaMon = {
+      for (var mon in AppData.danhSachMonHoc) mon.maMon: mon.hocKy
+    };
 
-  for (final maSV in danhSachMaSV) {
-    for (final maMon in danhSachMon) {
-      final diemGK = 5 + (dem % 5);
-      final diemCK = 5.5 + (dem % 4);
+    int dem = 1;
 
-      batch.set(db.collection('diem').doc('${maSV}_$maMon'), {
-        'maDiem': 'D${dem.toString().padLeft(3, '0')}',
-        'maSV': maSV,
-        'maMon': maMon,
-        'diemGiuaKy': diemGK,
-        'diemCuoiKy': diemCK,
-        'heSoGiuaKy': 0.4,
-        'heSoCuoiKy': 0.6,
-      });
+    for (final maSV in danhSachMaSV) {
+      for (final maMon in danhSachMon) {
+        final diemGK = 5 + (dem % 5);
+        final diemCK = 5.5 + (dem % 4);
 
-      dem++;
+        final int hocKyChinhXac = mapHocKyCuaMon[maMon] ?? 1;
+
+        batch.set(db.collection('diem').doc('${maSV}_$maMon'), {
+          'maDiem': 'D${dem.toString().padLeft(3, '0')}',
+          'maSV': maSV,
+          'maMon': maMon,
+          'hocKy': hocKyChinhXac, 
+          'diemGiuaKy': diemGK,
+          'diemCuoiKy': diemCK,
+          'heSoGiuaKy': 0.4,
+          'heSoCuoiKy': 0.6,
+        });
+
+        dem++;
+      }
     }
+
+    await batch.commit();
   }
 
-  await batch.commit();
-}
   Future<void> themDiemChoTatCaSinhVien() async {
-  final batch = db.batch();
+    final batch = db.batch();
 
-  final danhSachMaSV = [
-    '20120001',
-    '20120002',
-    '20120003',
-    '20120004',
-    '20120005',
-    '20120006',
-    '20120007',
-    '20120008',
-    '20120009',
-    '20120010',
-    '20120011',
-    '20120012',
-    '20120013',
-    '20120014',
-    '20120015',
-    '20120016',
-    '20120017',
-    '20120018',
-    '20120019',
-    '20120020',
-  ];
+    final danhSachMaSV = [
+      '20120001', '20120002', '20120003', '20120004', '20120005',
+      '20120006', '20120007', '20120008', '20120009', '20120010',
+      '20120011', '20120012', '20120013', '20120014', '20120015',
+      '20120016', '20120017', '20120018', '20120019', '20120020',
+    ];
 
-  final danhSachMon = ['MH002', 'MH003', 'MH004'];
+    final danhSachMon = ['MH002', 'MH003', 'MH004'];
 
-  int dem = 100;
+    final Map<String, int> mapHocKyCuaMon = {
+      for (var mon in AppData.danhSachMonHoc) mon.maMon: mon.hocKy
+    };
 
-  for (final maSV in danhSachMaSV) {
-    for (final maMon in danhSachMon) {
-      dem++;
+    int dem = 100;
 
-      batch.set(db.collection('diem').doc('${maSV}_$maMon'), {
-        'maDiem': 'D$dem',
-        'maSV': maSV,
-        'maMon': maMon,
-        'diemGiuaKy': 6 + (dem % 4),
-        'diemCuoiKy': 6.5 + (dem % 3),
-        'heSoGiuaKy': 0.4,
-        'heSoCuoiKy': 0.6,
-      });
+    for (final maSV in danhSachMaSV) {
+      for (final maMon in danhSachMon) {
+        dem++;
+
+        final int hocKyChinhXac = mapHocKyCuaMon[maMon] ?? 1;
+
+
+        batch.set(db.collection('diem').doc('${maSV}_$maMon'), {
+          'maDiem': 'D$dem',
+          'maSV': maSV,
+          'maMon': maMon,
+          'hocKy': hocKyChinhXac, // 🌟 Đã bổ sung trường hocKy
+          'diemGiuaKy': 6 + (dem % 4),
+          'diemCuoiKy': 6.5 + (dem % 3),
+          'heSoGiuaKy': 0.4,
+          'heSoCuoiKy': 0.6,
+        });
+      }
     }
-  }
 
-  await batch.commit();
-}
+    await batch.commit();
+  }
 }

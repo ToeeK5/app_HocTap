@@ -176,45 +176,45 @@ class AppData {
     // --- TÀI KHOẢN SINH VIÊN 1 ---
     TaiKhoan(
       maTK: 'TK001',
-      maSV: '20120001',       
-      tenDangNhap: 'SV001',   
-      matKhau: 'SV001',       
+      maSV: '20120001',
+      tenDangNhap: 'SV001',
+      matKhau: 'SV001',
       vaiTro: 'sinhvien',
     ),
 
     // --- TÀI KHOẢN ADMIN ---
     TaiKhoan(
       maTK: 'TK002',
-      maSV: 'AD001',          
-      tenDangNhap: 'admin',   
-      matKhau: 'admin',      
+      maSV: 'AD001',
+      tenDangNhap: 'admin',
+      matKhau: 'admin',
       vaiTro: 'admin',
     ),
 
     // --- TÀI KHOẢN SINH VIÊN 2 ---
     TaiKhoan(
       maTK: 'TK003',
-      maSV: '20120002',       
-      tenDangNhap: 'SV003',   
-      matKhau: 'SV003',       
+      maSV: '20120002',
+      tenDangNhap: 'SV003',
+      matKhau: 'SV003',
       vaiTro: 'sinhvien',
     ),
 
     // --- TÀI KHOẢN SINH VIÊN 3 ---
     TaiKhoan(
       maTK: 'TK004',
-      maSV: '20120003',       
-      tenDangNhap: 'SV004',   
-      matKhau: 'SV004',       
+      maSV: '20120003',
+      tenDangNhap: 'SV004',
+      matKhau: 'SV004',
       vaiTro: 'sinhvien',
     ),
 
     // --- TÀI KHOẢN SINH VIÊN 4 ---
     TaiKhoan(
       maTK: 'TK005',
-      maSV: '20120004',       
-      tenDangNhap: 'SV005',   
-      matKhau: 'SV005',       
+      maSV: '20120004',
+      tenDangNhap: 'SV005',
+      matKhau: 'SV005',
       vaiTro: 'sinhvien',
     ),
   ];
@@ -226,191 +226,212 @@ class AppData {
     MonHoc(maMon: 'MH004', tenMon: 'Java Nâng Cao', soTinChi: 3, hocKy: 4),
   ];
 
-  static List<Diem> danhSachDiem=[
+  static List<Diem> danhSachDiem = [
     // Dữ liệu điểm cho lớp CNTT1
     Diem(
-      maDiem:"D001",
-      maSV:"20120001",
-      maMon:"MH001",
-      diemGiuaKy:8,
-      diemCuoiKy:9,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
+      maDiem: "D001",
+      maSV: "20120001",
+      maMon: "MH001",
+      hocKy: 3, // 🌟 Đồng bộ theo học kỳ của môn MH001
+      diemGiuaKy: 8.0,
+      diemCuoiKy: 9.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
     ),
     Diem(
-      maDiem:"D002",
-      maSV:"20120002",
-      maMon:"MH001",
-      diemGiuaKy:7,
-      diemCuoiKy:8,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
+      maDiem: "D002",
+      maSV: "20120002",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 7.0,
+      diemCuoiKy: 8.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
     ),
     Diem(
-      maDiem:"D003",
-      maSV:"20120003",
-      maMon:"MH001",
-      diemGiuaKy:6,
-      diemCuoiKy:6.5,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
+      maDiem: "D003",
+      maSV: "20120003",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 6.0,
+      diemCuoiKy: 6.5,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
     ),
     Diem(
-      maDiem:"D004",
-      maSV:"20120004",
-      maMon:"MH001",
-      diemGiuaKy:5,
-      diemCuoiKy:5.5,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
+      maDiem: "D004",
+      maSV: "20120004",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 5.0,
+      diemCuoiKy: 5.5,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
     ),
     Diem(
-      maDiem:"D005",
-      maSV:"20120005",
-      maMon:"MH001",
-      diemGiuaKy:9,
-      diemCuoiKy:8.5,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
+      maDiem: "D005",
+      maSV: "20120005",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 9.0,
+      diemCuoiKy: 8.5,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
     ),
     Diem(
-      maDiem:"D006",
-      maSV:"20120006",
-      maMon:"MH001",
-      diemGiuaKy:7.5,
-      diemCuoiKy:8,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
+      maDiem: "D006",
+      maSV: "20120006",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 7.5,
+      diemCuoiKy: 8.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
     ),
     Diem(
-      maDiem:"D007",
-      maSV:"20120007",
-      maMon:"MH001",
-      diemGiuaKy:8,
-      diemCuoiKy:7.5,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
+      maDiem: "D007",
+      maSV: "20120007",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 8.0,
+      diemCuoiKy: 7.5,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
     ),
     Diem(
-      maDiem:"D008",
-      maSV:"20120008",
-      maMon:"MH001",
-      diemGiuaKy:6.5,
-      diemCuoiKy:7,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
+      maDiem: "D008",
+      maSV: "20120008",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 6.5,
+      diemCuoiKy: 7.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
     ),
     Diem(
-      maDiem:"D009",
-      maSV:"20120009",
-      maMon:"MH001",
-      diemGiuaKy:7,
-      diemCuoiKy:7.5,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
+      maDiem: "D009",
+      maSV: "20120009",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 7.0,
+      diemCuoiKy: 7.5,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
     ),
     Diem(
-      maDiem:"D010",
-      maSV:"20120010",
-      maMon:"MH001",
-      diemGiuaKy:8.5,
-      diemCuoiKy:8.5,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
+      maDiem: "D010",
+      maSV: "20120010",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 8.5,
+      diemCuoiKy: 8.5,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
     ),
-    
-    // Dữ liệu điểm cho lớp CNTT2
-    Diem(
-      maDiem:"D011",
-      maSV:"20120011",
-      maMon:"MH001",
-      diemGiuaKy:7.5,
-      diemCuoiKy:8,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
-    ),
-    Diem(
-      maDiem:"D012",
-      maSV:"20120012",
-      maMon:"MH001",
-      diemGiuaKy:6,
-      diemCuoiKy:6.5,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
-    ),
-    Diem(
-      maDiem:"D013",
-      maSV:"20120013",
-      maMon:"MH001",
-      diemGiuaKy:8,
-      diemCuoiKy:8.5,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
-    ),
-    Diem(
-      maDiem:"D014",
-      maSV:"20120014",
-      maMon:"MH001",
-      diemGiuaKy:7,
-      diemCuoiKy:7,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
-    ),
-    Diem(
-      maDiem:"D015",
-      maSV:"20120015",
-      maMon:"MH001",
-      diemGiuaKy:9,
-      diemCuoiKy:9,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
-    ),
-    Diem(
-      maDiem:"D016",
-      maSV:"20120016",
-      maMon:"MH001",
-      diemGiuaKy:6.5,
-      diemCuoiKy:7,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
-    ),
-    Diem(
-      maDiem:"D017",
-      maSV:"20120017",
-      maMon:"MH001",
-      diemGiuaKy:8,
-      diemCuoiKy:8,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
-    ),
-    Diem(
-      maDiem:"D018",
-      maSV:"20120018",
-      maMon:"MH001",
-      diemGiuaKy:5.5,
-      diemCuoiKy:6,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
-    ),
-    Diem(
-      maDiem:"D019",
-      maSV:"20120019",
-      maMon:"MH001",
-      diemGiuaKy:7.5,
-      diemCuoiKy:8,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
-    ),
-    Diem(
-      maDiem:"D020",
-      maSV:"20120020",
-      maMon:"MH001",
-      diemGiuaKy:8.5,
-      diemCuoiKy:9,
-      heSoGiuaKy:0.4,
-      heSoCuoiKy:0.6
-    )
 
+    // ================= MÔN HỌC: MH001 (Lớp CNTT2 - Học kỳ 3) =================
+    Diem(
+      maDiem: "D011",
+      maSV: "20120011",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 7.5,
+      diemCuoiKy: 8.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    ),
+    Diem(
+      maDiem: "D012",
+      maSV: "20120012",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 6.0,
+      diemCuoiKy: 6.5,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    ),
+    Diem(
+      maDiem: "D013",
+      maSV: "20120013",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 8.0,
+      diemCuoiKy: 8.5,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    ),
+
+    // ================= THÊM VÍ DỤ MÔN HỌC: MH004 (Java Nâng Cao - Học kỳ 4) =================
+    Diem(
+      maDiem: "D014",
+      maSV: "20120014",
+      maMon: "MH004", // 🌟 Môn MH004
+      hocKy: 4, // 🌟 Tự động chuyển thành Học kỳ 4 theo cấu trúc môn học
+      diemGiuaKy: 7.0,
+      diemCuoiKy: 7.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    ),
+    Diem(
+      maDiem: "D015",
+      maSV: "20120015",
+      maMon: "MH004",
+      hocKy: 4,
+      diemGiuaKy: 9.0,
+      diemCuoiKy: 9.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    ),
+    Diem(
+      maDiem: "D016",
+      maSV: "20120016",
+      maMon: "MH004",
+      hocKy: 4,
+      diemGiuaKy: 6.5,
+      diemCuoiKy: 7.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    ),
+    Diem(
+      maDiem: "D017",
+      maSV: "20120017",
+      maMon: "MH001", // Môn MH001 quay lại học kỳ 3
+      hocKy: 3,
+      diemGiuaKy: 8.0,
+      diemCuoiKy: 8.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    ),
+    Diem(
+      maDiem: "D018",
+      maSV: "20120018",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 5.5,
+      diemCuoiKy: 6.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    ),
+    Diem(
+      maDiem: "D019",
+      maSV: "20120019",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 7.5,
+      diemCuoiKy: 8.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    ),
+    Diem(
+      maDiem: "D020",
+      maSV: "20120020",
+      maMon: "MH001",
+      hocKy: 3,
+      diemGiuaKy: 8.5,
+      diemCuoiKy: 9.0,
+      heSoGiuaKy: 0.4,
+      heSoCuoiKy: 0.6,
+    ),
   ];
 
   static List<LichHoc> danhSachLichHoc = [
@@ -615,7 +636,7 @@ class AppData {
       ngayOnTap: '25/05/2026',
       trangThai: 'Chưa xong',
     ),
-    
+
     // --- SINH VIÊN 2: Trần Bình (20120002) ---
     KeHoachOnTap(
       maKeHoach: 'KH002',
@@ -625,7 +646,7 @@ class AppData {
       ngayOnTap: '26/05/2026',
       trangThai: 'Chưa xong',
     ),
-    
+
     // --- SINH VIÊN 3: Lê Cường (20120003) ---
     KeHoachOnTap(
       maKeHoach: 'KH003',
