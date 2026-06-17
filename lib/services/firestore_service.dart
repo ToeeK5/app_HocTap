@@ -54,6 +54,7 @@ class FirestoreService {
         'lop': sinhVien.lop,
         'email': sinhVien.email,
         'sdt': sinhVien.sdt,
+        'hocKyHienTai': sinhVien.hocKyHienTai ?? 0,
         'createdAt': FieldValue.serverTimestamp(),
       });
       return true;
@@ -124,6 +125,8 @@ class FirestoreService {
       await _db.collection('diem').doc(docId).set({
         'maSV': diem.maSV,
         'maMon': diem.maMon,
+        'hocKyMon': diem.hocKyMon,
+        'hocKySinhVien': diem.hocKySinhVien,
         'diemGiuaKy': diem.diemGiuaKy,
         'diemCuoiKy': diem.diemCuoiKy,
         'updatedAt': FieldValue.serverTimestamp(),
@@ -147,6 +150,8 @@ class FirestoreService {
           {
             'maSV': diem.maSV,
             'maMon': diem.maMon,
+            'hocKyMon': diem.hocKyMon,
+            'hocKySinhVien': diem.hocKySinhVien,
             'diemGiuaKy': diem.diemGiuaKy,
             'diemCuoiKy': diem.diemCuoiKy,
             'updatedAt': FieldValue.serverTimestamp(),
@@ -221,7 +226,8 @@ class FirestoreService {
         maDiem: doc.id,
         maSV: data['maSV'] ?? '',
         maMon: data['maMon'] ?? '',
-        hocKy: data['hocKy'] ?? '',
+        hocKyMon: data['hocKyMon'] ?? 1,
+        hocKySinhVien: data['hocKySinhVien'] ?? 1,
         diemGiuaKy: (data['diemGiuaKy'] ?? 0).toDouble(),
         diemCuoiKy: (data['diemCuoiKy'] ?? 0).toDouble(),
         heSoGiuaKy: (data['heSoGiuaKy'] ?? 0.4).toDouble(),
@@ -252,6 +258,8 @@ class FirestoreService {
         'maDiem': docId,
         'maSV': maSV,
         'maMon': maMon,
+        'hocKyMon': 0, 
+        'hocKySinhVien': 0, 
         'diemGiuaKy': 0.0,
         'diemCuoiKy': 0.0,
         'heSoGiuaKy': 0.4,

@@ -147,7 +147,13 @@ class TableSectionWidget extends StatelessWidget {
         ),
         DataColumn(
           label: Text(
-            'Hoc kỳ',
+            'Học kỳ SV',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          ),
+        ),
+        DataColumn(
+          label: Text(
+            'Hoc kỳ Môn',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           ),
         ),
@@ -190,15 +196,18 @@ class TableSectionWidget extends StatelessWidget {
     int itemsPerPage = 4;
     // Tìm vị trí bắt đầu lấy dữ liệu của trang hiện tại
     int startIndex = (currentPage - 1) * itemsPerPage;
-    
+
     // Cắt danh sách sinh viên chỉ lấy đúng các phần tử thuộc trang hiện tại
-    final pagedStudents = studentData.skip(startIndex).take(itemsPerPage).toList();
+    final pagedStudents = studentData
+        .skip(startIndex)
+        .take(itemsPerPage)
+        .toList();
 
     return pagedStudents.asMap().entries.map((entry) {
       int localIndex = entry.key;
       Map<String, dynamic> data = entry.value;
-      
-      // Tính toán lại index gốc (global index) trong studentData tổng thể 
+
+      // Tính toán lại index gốc (global index) trong studentData tổng thể
       // để mapping chính xác với Map controllers nhận từ file cha
       int globalIndex = startIndex + localIndex;
 
@@ -208,11 +217,14 @@ class TableSectionWidget extends StatelessWidget {
         mssv: data['mssv'] as String,
         ten: data['ten'] as String,
         lop: data['lop'] as String,
-        hocKy: data['hocKy'] as int,
+        hocKyMon: data['hocKyMon'] as int,
+        hocKySinhVien: data['hocKySinhVien'] as int,
         gk: data['gk'] as double,
         ck: data['ck'] as double,
-        gkController: controllers[globalIndex]?['gk'] ?? TextEditingController(),
-        ckController: controllers[globalIndex]?['ck'] ?? TextEditingController(),
+        gkController:
+            controllers[globalIndex]?['gk'] ?? TextEditingController(),
+        ckController:
+            controllers[globalIndex]?['ck'] ?? TextEditingController(),
         onUpdateScore: onUpdateScore,
         onEdit: () => onEdit(globalIndex),
         onDelete: () => onDelete(globalIndex),

@@ -102,7 +102,7 @@ class StudentDialogs {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Chọn học kỳ',
+                        'Học kỳ hiện tại của sinh viên',
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 8),
@@ -162,7 +162,7 @@ class StudentDialogs {
                       'mssv': mssvController.text.trim(),
                       'ten': tenController.text.trim(),
                       'lop': lopDuocChon.tenLop,      
-                      'hocKy': initialHocKyValue, // Trả về dạng chuỗi chuỗi số (Ví dụ: "1", "2")
+                      'hocKySinhVien': initialHocKyValue, 
                     },
                   );
                 },
