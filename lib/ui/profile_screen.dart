@@ -5,6 +5,7 @@ import '../models/sinh_vien.dart';
 import '../services/session_service.dart';
 import '../services/sinh_vien_service.dart';
 import '../services/diem_service.dart';
+import '../services/dang_ky_service.dart';
 import '../utils/tinh_toan_hoc_tap.dart';
 import '../utils/theme_app.dart';
 import '../widgets/bottom_nav_app.dart';
@@ -32,7 +33,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<_ProfileData> _loadData() async {
     final maSV = SessionService.layMaSV();
     final sinhVien = await SinhVienService().laySinhVienTheoMa(maSV);
-    final dsDiem = await DiemService().layDiemTheoSinhVien(maSV);
+    final dsDiemAll = await DiemService().layDiemTheoSinhVien(maSV);
+
+    // Lọc chỉ lấy các môn đã đăng ký ở học kỳ hiện tại để tổng tín chỉ / GPA khớp với trang Home
+    final hocKyHienTai = sinhVien?.hocKyHienTai ?? 1;
+    final dsMaDangKy = await DangKyService().layMonDaDangKy(maSV, hocKyHienTai);
+
+    final dsDiem = dsDiemAll
+        .where((d) => dsMaDangKy.contains(d.monHoc.maMon))
+        .toList();
 
     return _ProfileData(sinhVien: sinhVien, dsDiem: dsDiem);
   }
@@ -44,15 +53,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text(
-  "TRANG CÁ NHÂN",
-  style: TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 1.2,
-    color: ThemeApp.chuDam,
-  ),
-),
-centerTitle: true,
+          "TRANG CÁ NHÂN",
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+            color: ThemeApp.chuDam,
+          ),
+        ),
+        centerTitle: true,
         backgroundColor: ThemeApp.mauNen,
         foregroundColor: ThemeApp.chuDam,
         elevation: 0,
@@ -208,7 +217,6 @@ centerTitle: true,
                                 dangTron,
                                 () => setState(() => dangTron = true),
                               ),
-                              
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -339,107 +347,95 @@ centerTitle: true,
       ),
     );
   }
+
   void _hienDanhGia(
-  BuildContext context,
-  List<DiemMonHienThi> dsDiem,
-  double gpa10,
-  String xepLoai,
-) {
-  final monDat = dsDiem.where((e) => e.diemTongKet >= 5).length;
-  final monRot = dsDiem.where((e) => e.diemTongKet < 5).length;
-  final monCanCaiThien =
-      dsDiem.where((e) => e.diemTongKet < 6.5).length;
+    BuildContext context,
+    List<DiemMonHienThi> dsDiem,
+    double gpa10,
+    String xepLoai,
+  ) {
+    final monDat = dsDiem.where((e) => e.diemTongKet >= 5).length;
+    final monRot = dsDiem.where((e) => e.diemTongKet < 5).length;
+    final monCanCaiThien = dsDiem.where((e) => e.diemTongKet < 6.5).length;
 
-  String nhanXet = "";
+    String nhanXet = "";
 
-  if (gpa10 >= 8) {
-    nhanXet =
-        "Kết quả học tập tốt. Tiếp tục duy trì thành tích hiện tại.";
-  } else if (gpa10 >= 6.5) {
-    nhanXet =
-        "Kết quả học tập khá. Nên cải thiện thêm các môn điểm thấp.";
-  } else if (gpa10 >= 5) {
-    nhanXet =
-        "Đã đạt yêu cầu nhưng cần cố gắng hơn để nâng GPA.";
-  } else {
-    nhanXet =
-        "Có nhiều môn chưa đạt. Cần tập trung cải thiện kết quả học tập.";
-  }
+    if (gpa10 >= 8) {
+      nhanXet = "Kết quả học tập tốt. Tiếp tục duy trì thành tích hiện tại.";
+    } else if (gpa10 >= 6.5) {
+      nhanXet = "Kết quả học tập khá. Nên cải thiện thêm các môn điểm thấp.";
+    } else if (gpa10 >= 5) {
+      nhanXet = "Đã đạt yêu cầu nhưng cần cố gắng hơn để nâng GPA.";
+    } else {
+      nhanXet =
+          "Có nhiều môn chưa đạt. Cần tập trung cải thiện kết quả học tập.";
+    }
 
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Đánh giá học tập"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("GPA hệ 10: ${gpa10.toStringAsFixed(2)}"),
-          Text("Xếp loại: $xepLoai"),
-          Text("Môn đạt: $monDat"),
-          Text("Môn chưa đạt: $monRot"),
-          Text("Môn cần cải thiện: $monCanCaiThien"),
-          const SizedBox(height: 12),
-          Text(nhanXet),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Đóng"),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Đánh giá học tập"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("GPA hệ 10: ${gpa10.toStringAsFixed(2)}"),
+            Text("Xếp loại: $xepLoai"),
+            Text("Môn đạt: $monDat"),
+            Text("Môn chưa đạt: $monRot"),
+            Text("Môn cần cải thiện: $monCanCaiThien"),
+            const SizedBox(height: 12),
+            Text(nhanXet),
+          ],
         ),
-      ],
-    ),
-  );
-}
-
-void _hienTienDoRaTruong(
-  BuildContext context,
-  int tongTin,
-) {
-  const tongTinTotNghiep = 120;
-
-  final phanTram =
-      ((tongTin / tongTinTotNghiep) * 100)
-          .clamp(0, 100)
-          .toStringAsFixed(1);
-
-  final conThieu = tongTinTotNghiep - tongTin;
-
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Tiến độ ra trường"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Tín chỉ đã tích lũy: $tongTin/$tongTinTotNghiep"),
-          Text("Tiến độ hoàn thành: $phanTram%"),
-          Text("Tín chỉ còn thiếu: ${conThieu < 0 ? 0 : conThieu}"),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: tongTin / tongTinTotNghiep,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Đóng"),
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Đóng"),
+    );
+  }
+
+  void _hienTienDoRaTruong(BuildContext context, int tongTin) {
+    const tongTinTotNghiep = 120;
+
+    final phanTram = ((tongTin / tongTinTotNghiep) * 100)
+        .clamp(0, 100)
+        .toStringAsFixed(1);
+
+    final conThieu = tongTinTotNghiep - tongTin;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Tiến độ ra trường"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Tín chỉ đã tích lũy: $tongTin/$tongTinTotNghiep"),
+            Text("Tiến độ hoàn thành: $phanTram%"),
+            Text("Tín chỉ còn thiếu: ${conThieu < 0 ? 0 : conThieu}"),
+            const SizedBox(height: 12),
+            LinearProgressIndicator(value: tongTin / tongTinTotNghiep),
+          ],
         ),
-      ],
-    ),
-  );
-}
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Đóng"),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ProfileData {
   final SinhVien? sinhVien;
   final List<DiemMonHienThi> dsDiem;
 
-  _ProfileData({
-    required this.sinhVien,
-    required this.dsDiem,
-  });
+  _ProfileData({required this.sinhVien, required this.dsDiem});
 }

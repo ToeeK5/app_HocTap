@@ -29,12 +29,10 @@ class _LichHocScreenState extends State<LichHocScreen> {
     final maSV = SessionService.layMaSV();
 
     final sinhVien = await SinhVienService().laySinhVienTheoMa(maSV);
-    final dsTatCa = await LichHocService().layLichTheoSinhVien(maSV);
+    // Lấy lịch thực tế từ Firestore dựa trên các môn đã đăng ký
+    final dsTatCa = await LichHocService().layLichThucTeTheoSinhVien(maSV);
 
-    return _LichHocData(
-      sinhVien: sinhVien,
-      dsTatCa: dsTatCa,
-    );
+    return _LichHocData(sinhVien: sinhVien, dsTatCa: dsTatCa);
   }
 
   @override
@@ -74,12 +72,10 @@ class _LichHocScreenState extends State<LichHocScreen> {
             final sinhVien = snapshot.data!.sinhVien;
             final dsTatCa = snapshot.data!.dsTatCa;
 
-            final dsHocKy = _danhSachHocKy(
-              dsTatCa,
-              sinhVien?.hocKyHienTai,
-            );
+            final dsHocKy = _danhSachHocKy(dsTatCa, sinhVien?.hocKyHienTai);
 
-            final hocKy = hocKyDangChon ??
+            final hocKy =
+                hocKyDangChon ??
                 sinhVien?.hocKyHienTai ??
                 (dsHocKy.isEmpty ? null : dsHocKy.first);
 
@@ -157,10 +153,7 @@ class _LichHocScreenState extends State<LichHocScreen> {
     );
   }
 
-  List<int> _danhSachHocKy(
-    List<LichHocHienThi> dsLich,
-    int? hocKyHienTai,
-  ) {
+  List<int> _danhSachHocKy(List<LichHocHienThi> dsLich, int? hocKyHienTai) {
     final danhSach = dsLich.map((item) => item.monHoc.hocKy).toSet().toList()
       ..sort();
 
@@ -177,10 +170,7 @@ class _LichHocData {
   final SinhVien? sinhVien;
   final List<LichHocHienThi> dsTatCa;
 
-  _LichHocData({
-    required this.sinhVien,
-    required this.dsTatCa,
-  });
+  _LichHocData({required this.sinhVien, required this.dsTatCa});
 }
 
 class _ThongTinSinhVien extends StatelessWidget {
@@ -317,9 +307,7 @@ class _BoLoc extends StatelessWidget {
 class _LichHocCard extends StatelessWidget {
   final LichHocHienThi item;
 
-  const _LichHocCard({
-    required this.item,
-  });
+  const _LichHocCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -407,9 +395,7 @@ class _LichHocCard extends StatelessWidget {
 class _EmptyBox extends StatelessWidget {
   final String text;
 
-  const _EmptyBox({
-    required this.text,
-  });
+  const _EmptyBox({required this.text});
 
   @override
   Widget build(BuildContext context) {

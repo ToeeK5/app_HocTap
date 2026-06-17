@@ -25,7 +25,6 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
   int _currentPage = 1;
   String _selectedMonHoc = '';
-  String? _selectedHocKy;
   List<String> _danhSachMonHoc = [];
 
   late List<Map<String, dynamic>> _studentData;
@@ -39,7 +38,6 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
   void initState() {
     super.initState();
     _selectedMonHoc = '';
-    _selectedHocKy = null;
     _studentData = [];
     _controllers = {};
 
@@ -71,7 +69,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
             // Lấy danh sách mã môn học
             List<String> clearListSubject = [];
             for (var doc in snapshot.docs) {
-              var data = doc.data() as Map<String, dynamic>;
+              var data = doc.data();
               if (data.containsKey('maMH') && data['maMH'] != null) {
                 clearListSubject.add(data['maMH'].toString().trim());
               } else if (data.containsKey('maMon') && data['maMon'] != null) {
@@ -101,7 +99,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
             });
           },
           onError: (e) {
-            print('Lỗi lắng nghe môn học: $e');
+            debugPrint('Lỗi lắng nghe môn học: $e');
             setState(() => _isLoading = false);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -152,10 +150,10 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
             'mssv': diem.maSV,
             'ten': svGoc.hoTen,
             'lop': svGoc.lop,
-            'gk': diem.diemGiuaKy ?? 0.0,
-            'ck': diem.diemCuoiKy ?? 0.0,
-            'hocKyMon': diem.hocKyMon ?? 0,
-            'hocKySinhVien': diem.hocKySinhVien ?? 0,
+            'gk': diem.diemGiuaKy,
+            'ck': diem.diemCuoiKy,
+            'hocKyMon': diem.hocKyMon,
+            'hocKySinhVien': diem.hocKySinhVien,
           });
         }
       }
@@ -179,7 +177,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
         _currentPage = 1;
       });
     } catch (e) {
-      print('Error loading student data from Firestore: $e');
+      debugPrint('Error loading student data from Firestore: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Lỗi tải bảng điểm sinh viên: $e')),
@@ -190,7 +188,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
   void _initializeControllers() {
     // Giải phóng bộ nhớ controllers cũ trước khi tạo mới để tránh tràn bộ nhớ leak memory
-    if (this._controllers.isNotEmpty) {
+    if (_controllers.isNotEmpty) {
       for (var controllers in _controllers.values) {
         controllers['gk']?.dispose();
         controllers['ck']?.dispose();
@@ -237,14 +235,16 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
       // Nếu dữ liệu rỗng, cảnh báo ngay từ màn hình chính để tránh crash Dialog
       if (activeLops.isEmpty || activeHocKys.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Hệ thống chưa có dữ liệu Lớp hoặc Học kỳ. Vui lòng thêm nhanh trước!',
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Hệ thống chưa có dữ liệu Lớp hoặc Học kỳ. Vui lòng thêm nhanh trước!',
+              ),
+              backgroundColor: Colors.orange,
             ),
-            backgroundColor: Colors.orange,
-          ),
-        );
+          );
+        }
         return;
       }
 
@@ -257,7 +257,8 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
       if (result != null && mounted) {
         setState(() => _isLoading = true);
-        final int hocKySinhVien = int.tryParse(result['hocKySinhVien'] ?? '1') ?? 1;
+        final int hocKySinhVien =
+            int.tryParse(result['hocKySinhVien'] ?? '1') ?? 1;
         bool success = await _adminService.addSingleSinhVien(
           maSV: result['mssv']!,
           hoTen: result['ten']!,
@@ -302,7 +303,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      print('Lỗi: $e');
+      debugPrint('Lỗi: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -317,19 +318,23 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
       if (success) {
         await _loadStudentDataFromFirestore();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Xóa sinh viên thành công!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Xóa sinh viên thành công!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Lỗi xóa sinh viên!'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Lỗi xóa sinh viên!'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       }
     }
   }
@@ -353,12 +358,14 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
           _studentData[index]['ten'] = result['ten'];
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cập nhật sinh viên thành công!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cập nhật sinh viên thành công!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
     }
   }
@@ -479,38 +486,46 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       }
 
       if (diemList.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Không có dữ liệu điểm mới nào để lưu!'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Không có dữ liệu điểm mới nào để lưu!'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
         return;
       }
 
       bool success = await _firestoreService.saveBatchDiem(diemList);
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Lưu ${diemList.length} điểm thành công vào Firebase!',
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Lưu ${diemList.length} điểm thành công vào Firebase!',
+              ),
+              backgroundColor: Colors.green,
             ),
-            backgroundColor: Colors.green,
-          ),
-        );
+          );
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Lỗi tiến trình khi lưu điểm lên Firebase!'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Lỗi tiến trình khi lưu điểm lên Firebase!'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.redAccent),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 

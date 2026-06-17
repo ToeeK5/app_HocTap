@@ -9,6 +9,7 @@ import '../utils/theme_app.dart';
 import '../utils/tinh_toan_hoc_tap.dart';
 import '../widgets/bottom_nav_app.dart';
 import '../widgets/stat_card.dart';
+import 'dang_ky_hoc_phan.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -31,13 +32,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final sinhVien = await SinhVienService().laySinhVienTheoMa(maSV);
     final dsDiem = await DiemService().layDiemTheoSinhVien(maSV);
-    final dsLich = await LichHocService().layLichTheoSinhVien(maSV);
-    final dsKeHoach = await LichHocService().layKeHoachTheoSinhVien(maSV);
+    final dsLich = await LichHocService().layLichThucTeTheoSinhVien(maSV);
+    final dsKeHoach = LichHocService().layKeHoachTheoSinhVien(maSV);
+
+    // Build set of registered course codes (distinct)
+    final registeredMaMon = <String>{};
+    for (final item in dsLich) {
+      registeredMaMon.add(item.lichHoc.maMon);
+    }
+
+    // Filter dsDiem to only include grades for registered courses
+    final dsDiemDangKy = dsDiem
+        .where((d) => registeredMaMon.contains(d.diem.maMon))
+        .toList();
+
+    // Compute total credits from the filtered grade list (distinct monHoc)
+    final distinctMonForCredits = <String>{};
+    int tongTinDangKy = 0;
+    for (final d in dsDiemDangKy) {
+      final maMon = d.monHoc.maMon;
+      if (!distinctMonForCredits.contains(maMon)) {
+        distinctMonForCredits.add(maMon);
+        tongTinDangKy += d.monHoc.soTinChi;
+      }
+    }
 
     return _HomeData(
       sinhVien: sinhVien,
       dsDiem: dsDiem,
+      dsDiemDangKy: dsDiemDangKy,
       dsLich: dsLich,
+      tongTinDangKy: tongTinDangKy,
       dsKeHoach: dsKeHoach,
     );
   }
@@ -76,17 +101,40 @@ class _HomeScreenState extends State<HomeScreen> {
             }
 
             final sinhVien = snapshot.data!.sinhVien;
-            final dsDiem = snapshot.data!.dsDiem;
             final dsLich = snapshot.data!.dsLich;
             final dsKeHoach = snapshot.data!.dsKeHoach;
 
-            final gpa10 = TinhToanHocTap.tinhGPAHe10(dsDiem);
-            final tongTin = TinhToanHocTap.tinhTongTin(dsDiem);
+            // Use only grades for registered courses when computing GPA and credits
+            final dsDiemDangKy = snapshot.data!.dsDiemDangKy;
+            final gpa10 = TinhToanHocTap.tinhGPAHe10(dsDiemDangKy);
+            final tongTin = snapshot.data!.tongTinDangKy;
             final xepLoai = TinhToanHocTap.xepLoaiHocLuc(gpa10);
 
-            final lichHomNay = dsLich.where((item) {
-              final thuHomNay = LichHocService().tenThu(DateTime.now().weekday);
-              return item.lichHoc.thu == thuHomNay;
+            final thuHomNay = LichHocService().tenThu(DateTime.now().weekday);
+            final lichHomNay = dsLich
+                .where((item) => item.lichHoc.thu == thuHomNay)
+                .toList();
+
+            // detect classes that are happening now (current time between start and end)
+            int timeToMinutes(String t) {
+              final parts = t.split(':');
+              final h = int.tryParse(parts[0]) ?? 0;
+              final m = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
+              return h * 60 + m;
+            }
+
+            final now = DateTime.now();
+            final nowMinutes = now.hour * 60 + now.minute;
+            final lichDangDienRa = lichHomNay.where((item) {
+              final start = item.lichHoc.gioBatDau;
+              final end = item.lichHoc.gioKetThuc;
+              try {
+                final s = timeToMinutes(start);
+                final e = timeToMinutes(end);
+                return s <= nowMinutes && nowMinutes <= e;
+              } catch (_) {
+                return false;
+              }
             }).toList();
 
             return SingleChildScrollView(
@@ -100,6 +148,59 @@ class _HomeScreenState extends State<HomeScreen> {
                     lop: sinhVien?.lop ?? '',
                     hocKy: sinhVien?.hocKyHienTai ?? 0,
                   ),
+
+                  const SizedBox(height: 8),
+                  // Hiển thị nút đăng ký khi học kỳ là 3 hoặc 4
+                  if ((sinhVien?.hocKyHienTai ?? 0) == 3 ||
+                      (sinhVien?.hocKyHienTai ?? 0) == 4)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ThemeApp.mauChinh,
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DangKyHocPhanScreen(
+                                hocKy: sinhVien?.hocKyHienTai ?? 3,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text('Đăng ký theo kỳ'),
+                      ),
+                    ),
+
+                  // Banner hiển thị các lớp đang diễn ra ngay bây giờ (nếu có)
+                  if (lichDangDienRa.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.orange),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Lớp đang diễn ra ngay bây giờ',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 6),
+                          ...lichDangDienRa.map(
+                            (item) => Text(
+                              '${item.monHoc.tenMon} | ${item.lichHoc.gioBatDau} - ${item.lichHoc.gioKetThuc} | Phòng ${item.lichHoc.phongHoc}',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 16),
 
@@ -129,8 +230,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Expanded(
                         child: StatCard(
-                          title: 'Lịch học',
-                          value: '${dsLich.length}',
+                          title: 'Lịch học (số môn)',
+                          value:
+                              '${dsLich.map((e) => e.lichHoc.maMon).toSet().length}',
                           icon: Icons.calendar_month_rounded,
                         ),
                       ),
@@ -150,7 +252,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   _SectionTitle(
                     title: 'Lịch học hôm nay',
                     actionText: 'Xem lịch',
-                    onTap: () => Navigator.pushReplacementNamed(context, '/lichhoc'),
+                    onTap: () =>
+                        Navigator.pushReplacementNamed(context, '/lichhoc'),
                   ),
 
                   const SizedBox(height: 10),
@@ -202,13 +305,17 @@ class _HomeScreenState extends State<HomeScreen> {
 class _HomeData {
   final SinhVien? sinhVien;
   final List<DiemMonHienThi> dsDiem;
+  final List<DiemMonHienThi> dsDiemDangKy;
   final List<LichHocHienThi> dsLich;
+  final int tongTinDangKy;
   final List<dynamic> dsKeHoach;
 
   _HomeData({
     required this.sinhVien,
     required this.dsDiem,
+    required this.dsDiemDangKy,
     required this.dsLich,
+    required this.tongTinDangKy,
     required this.dsKeHoach,
   });
 }
@@ -285,11 +392,7 @@ class _SectionTitle extends StatelessWidget {
   final String? actionText;
   final VoidCallback? onTap;
 
-  const _SectionTitle({
-    required this.title,
-    this.actionText,
-    this.onTap,
-  });
+  const _SectionTitle({required this.title, this.actionText, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -343,10 +446,7 @@ class _LichCard extends StatelessWidget {
               color: ThemeApp.mauPhu,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
-              Icons.schedule_rounded,
-              color: ThemeApp.mauIcon,
-            ),
+            child: const Icon(Icons.schedule_rounded, color: ThemeApp.mauIcon),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -404,10 +504,7 @@ class _KeHoachCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.task_alt_rounded,
-                color: ThemeApp.mauIcon,
-              ),
+              const Icon(Icons.task_alt_rounded, color: ThemeApp.mauIcon),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -429,17 +526,11 @@ class _KeHoachCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            noiDung,
-            style: const TextStyle(color: ThemeApp.chuPhu),
-          ),
+          Text(noiDung, style: const TextStyle(color: ThemeApp.chuPhu)),
           const SizedBox(height: 6),
           Text(
             'Ngày ôn tập: $ngayOnTap',
-            style: const TextStyle(
-              color: ThemeApp.chuPhu,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: ThemeApp.chuPhu, fontSize: 12),
           ),
         ],
       ),
@@ -466,10 +557,7 @@ class _MonHocCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.menu_book_rounded,
-            color: ThemeApp.mauIcon,
-          ),
+          const Icon(Icons.menu_book_rounded, color: ThemeApp.mauIcon),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
