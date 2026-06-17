@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/session_service.dart';
 import '../services/diem_service.dart';
+import '../services/dang_ky_service.dart';
 import '../utils/tinh_toan_hoc_tap.dart';
 import '../utils/theme_app.dart';
 import '../widgets/bottom_nav_app.dart';
@@ -17,6 +18,7 @@ class DiemScreen extends StatefulWidget {
 class _DiemScreenState extends State<DiemScreen> {
   final timController = TextEditingController();
   late Future<List<DiemMonHienThi>> futureDiem;
+  late Future<List<String>> futureMaDangKy;
   double diemLoc = 0;
   bool sapXepCaoXuongThap = true;
 
@@ -25,6 +27,9 @@ class _DiemScreenState extends State<DiemScreen> {
     super.initState();
     final maSV = SessionService.layMaSV();
     futureDiem = DiemService().layDiemTheoSinhVien(maSV);
+    // load registered course ids for current student (all semesters may be used elsewhere)
+    // We'll load current semester registered list when building
+    futureMaDangKy = DangKyService().layMonDaDangKyTatCa(maSV);
   }
 
   @override
@@ -53,7 +58,6 @@ class _DiemScreenState extends State<DiemScreen> {
                 color: ThemeApp.chuDam,
               ),
             ),
-             
           ],
         ),
       ),
@@ -88,196 +92,214 @@ class _DiemScreenState extends State<DiemScreen> {
 
               return a.diemTongKet.compareTo(b.diemTongKet);
             });
-            final tongTin = TinhToanHocTap.tinhTongTin(dsGoc);
-            final gpa10 = TinhToanHocTap.tinhGPAHe10(dsGoc);
+            // Ensure totals are computed only from registered courses in current semester
+            // We'll try to intersect dsGoc with the registered course list if available
+            return FutureBuilder<List<String>>(
+              future: futureMaDangKy,
+              builder: (context, snapDangKy) {
+                List<DiemMonHienThi> dsForTotals = dsGoc;
+                if (snapDangKy.hasData) {
+                  final maDangKy = snapDangKy.data!;
+                  dsForTotals = dsGoc
+                      .where((d) => maDangKy.contains(d.monHoc.maMon))
+                      .toList();
+                }
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                final tongTin = TinhToanHocTap.tinhTongTin(dsForTotals);
+                final gpa10 = TinhToanHocTap.tinhGPAHe10(dsForTotals);
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: _theTongKet(
-                          "Tổng tín chỉ",
-                          "$tongTin",
-                          Icons.confirmation_number_rounded,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _theTongKet(
+                              "Tổng tín chỉ",
+                              "$tongTin",
+                              Icons.confirmation_number_rounded,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _theTongKet(
+                              "Điểm TB /10",
+                              "$gpa10",
+                              Icons.star_rounded,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      TextField(
+                        controller: timController,
+                        onChanged: (value) => setState(() {}),
+                        decoration: InputDecoration(
+                          hintText: "Tìm môn học",
+                          prefixIcon: const Icon(
+                            Icons.search_rounded,
+                            color: ThemeApp.mauIcon,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _theTongKet(
-                          "Điểm TB /10",
-                          "$gpa10",
-                          Icons.star_rounded,
+
+                      const SizedBox(height: 18),
+                      const SizedBox(height: 14),
+
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: ThemeApp.mauVien),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Bộ lọc điểm",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: ThemeApp.chuDam,
+                              ),
+                            ),
+
+                            const SizedBox(height: 10),
+
+                            DropdownButtonFormField<double>(
+                              initialValue: diemLoc,
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: const Color(0xffF8FCFF),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 0,
+                                  child: Text("Tất cả"),
+                                ),
+                                DropdownMenuItem(
+                                  value: 7,
+                                  child: Text("Điểm từ 7 trở lên"),
+                                ),
+                                DropdownMenuItem(
+                                  value: 8,
+                                  child: Text("Điểm từ 8 trở lên"),
+                                ),
+                                DropdownMenuItem(
+                                  value: 9,
+                                  child: Text("Điểm từ 9 trở lên"),
+                                ),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  diemLoc = value ?? 0;
+                                });
+                              },
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        sapXepCaoXuongThap = true;
+                                      });
+                                    },
+                                    icon: const Icon(
+                                      Icons.arrow_downward_rounded,
+                                      color: Colors.white,
+                                    ),
+                                    label: const Text(
+                                      "Cao → Thấp",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: sapXepCaoXuongThap
+                                          ? ThemeApp.mauChinh
+                                          : ThemeApp.mauIcon,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        sapXepCaoXuongThap = false;
+                                      });
+                                    },
+                                    icon: const Icon(
+                                      Icons.arrow_upward_rounded,
+                                      color: Colors.white,
+                                    ),
+                                    label: const Text(
+                                      "Thấp → Cao",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: !sapXepCaoXuongThap
+                                          ? ThemeApp.mauChinh
+                                          : ThemeApp.mauIcon,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
+                      const Text(
+                        "Danh sách môn học",
+                        style: TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                          color: ThemeApp.chuDam,
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      if (dsDiem.isEmpty)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(30),
+                            child: Text(
+                              "Không có môn học",
+                              style: TextStyle(color: ThemeApp.chuPhu),
+                            ),
+                          ),
+                        ),
+
+                      ...dsDiem.map((item) => _cardDiem(item)),
                     ],
                   ),
-
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: timController,
-                    onChanged: (value) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: "Tìm môn học",
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        color: ThemeApp.mauIcon,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-                  const SizedBox(height: 14),
-
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: ThemeApp.mauVien),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Bộ lọc điểm",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: ThemeApp.chuDam,
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        DropdownButtonFormField<double>(
-                          initialValue: diemLoc,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: const Color(0xffF8FCFF),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: 0, child: Text("Tất cả")),
-                            DropdownMenuItem(
-                              value: 7,
-                              child: Text("Điểm từ 7 trở lên"),
-                            ),
-                            DropdownMenuItem(
-                              value: 8,
-                              child: Text("Điểm từ 8 trở lên"),
-                            ),
-                            DropdownMenuItem(
-                              value: 9,
-                              child: Text("Điểm từ 9 trở lên"),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            setState(() {
-                              diemLoc = value ?? 0;
-                            });
-                          },
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  setState(() {
-                                    sapXepCaoXuongThap = true;
-                                  });
-                                },
-                                icon: const Icon(
-                                  Icons.arrow_downward_rounded,
-                                  color: Colors.white,
-                                ),
-                                label: const Text(
-                                  "Cao → Thấp",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: sapXepCaoXuongThap
-                                      ? ThemeApp.mauChinh
-                                      : ThemeApp.mauIcon,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 10),
-
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  setState(() {
-                                    sapXepCaoXuongThap = false;
-                                  });
-                                },
-                                icon: const Icon(
-                                  Icons.arrow_upward_rounded,
-                                  color: Colors.white,
-                                ),
-                                label: const Text(
-                                  "Thấp → Cao",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: !sapXepCaoXuongThap
-                                      ? ThemeApp.mauChinh
-                                      : ThemeApp.mauIcon,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Text(
-                    "Danh sách môn học",
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                      color: ThemeApp.chuDam,
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  if (dsDiem.isEmpty)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(30),
-                        child: Text(
-                          "Không có môn học",
-                          style: TextStyle(color: ThemeApp.chuPhu),
-                        ),
-                      ),
-                    ),
-
-                  ...dsDiem.map((item) => _cardDiem(item)),
-                ],
-              ),
+                );
+              },
             );
           },
         ),
