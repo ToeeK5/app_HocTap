@@ -3,7 +3,8 @@ class Diem {
   String maDiem;
   String maSV;
   String maMon;
-  int hocKy; // Thêm trường học kỳ để dễ quản lý và truy vấn hơn
+  int hocKyMon; 
+  int hocKySinhVien; 
   double diemGiuaKy;
   double diemCuoiKy;
   double heSoGiuaKy;
@@ -13,7 +14,8 @@ class Diem {
     required this.maDiem,
     required this.maSV,
     required this.maMon,
-    required this.hocKy,
+    required this.hocKyMon,
+    required this.hocKySinhVien,
     required this.diemGiuaKy,
     required this.diemCuoiKy,
     required this.heSoGiuaKy,
@@ -26,7 +28,8 @@ class Diem {
       maDiem: data['maDiem'] ?? '',
       maSV: data['maSV'] ?? '',
       maMon: data['maMon'] ?? '',
-      hocKy: data['hocKy'] ?? 0,
+      hocKyMon: data['hocKyMon'] ?? 0,
+      hocKySinhVien: data['hocKySinhVien'] ?? 0,
       diemGiuaKy: (data['diemGiuaKy'] ?? 0).toDouble(),
       diemCuoiKy: (data['diemCuoiKy'] ?? 0).toDouble(),
       heSoGiuaKy: (data['heSoGiuaKy'] ?? 0.4).toDouble(),
@@ -40,7 +43,8 @@ class Diem {
       'maDiem': maDiem,
       'maSV': maSV,
       'maMon': maMon,
-      'hocKy': hocKy,
+      'hocKyMon': hocKyMon,
+      'hocKySinhVien': hocKySinhVien,
       'diemGiuaKy': diemGiuaKy,
       'diemCuoiKy': diemCuoiKy,
       'heSoGiuaKy': heSoGiuaKy,
@@ -61,7 +65,8 @@ class Diem {
       maDiem: '${maSV}_$maMon',
       maSV: maSV,
       maMon: maMon,
-      hocKy: 0, // Có thể để trống hoặc gán giá trị mặc định
+      hocKyMon: 0, // Có thể để trống hoặc gán giá trị mặc định
+      hocKySinhVien: 0, // Có thể để trống hoặc gán giá trị mặc định
       diemGiuaKy: 0.0,
       diemCuoiKy: 0.0,
       heSoGiuaKy: 0.4,

@@ -66,50 +66,53 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
     _monHocSubscription = firestoreInstance
         .collection('mon_hoc')
         .snapshots() // ← .snapshots() thay vì .get()
-        .listen((snapshot) {
-      // Lấy danh sách mã môn học
-      List<String> clearListSubject = [];
-      for (var doc in snapshot.docs) {
-        var data = doc.data() as Map<String, dynamic>;
-        if (data.containsKey('maMH') && data['maMH'] != null) {
-          clearListSubject.add(data['maMH'].toString().trim());
-        } else if (data.containsKey('maMon') && data['maMon'] != null) {
-          clearListSubject.add(data['maMon'].toString().trim());
-        }
-      }
+        .listen(
+          (snapshot) {
+            // Lấy danh sách mã môn học
+            List<String> clearListSubject = [];
+            for (var doc in snapshot.docs) {
+              var data = doc.data() as Map<String, dynamic>;
+              if (data.containsKey('maMH') && data['maMH'] != null) {
+                clearListSubject.add(data['maMH'].toString().trim());
+              } else if (data.containsKey('maMon') && data['maMon'] != null) {
+                clearListSubject.add(data['maMon'].toString().trim());
+              }
+            }
 
-      clearListSubject.sort();
-      // ⭐ Nếu môn đang chọn không còn tồn tại → reset
-      if (!clearListSubject.contains(_selectedMonHoc)) {
-        _selectedMonHoc = clearListSubject.isNotEmpty
-            ? clearListSubject.first
-            : '';
-        if (_selectedMonHoc.isNotEmpty) {
-          _loadStudentDataFromFirestore();
-        } else {
-          setState(() {
-            _studentData = [];
-            _controllers = {};
-          });
-        }
-      }
+            clearListSubject.sort();
+            // ⭐ Nếu môn đang chọn không còn tồn tại → reset
+            if (!clearListSubject.contains(_selectedMonHoc)) {
+              _selectedMonHoc = clearListSubject.isNotEmpty
+                  ? clearListSubject.first
+                  : '';
+              if (_selectedMonHoc.isNotEmpty) {
+                _loadStudentDataFromFirestore();
+              } else {
+                setState(() {
+                  _studentData = [];
+                  _controllers = {};
+                });
+              }
+            }
 
-      setState(() {
-        _danhSachMonHoc = clearListSubject;
-        _isLoading = false;
-      });
-    }, onError: (e) {
-      print('Lỗi lắng nghe môn học: $e');
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi tải dữ liệu môn học: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
+            setState(() {
+              _danhSachMonHoc = clearListSubject;
+              _isLoading = false;
+            });
+          },
+          onError: (e) {
+            print('Lỗi lắng nghe môn học: $e');
+            setState(() => _isLoading = false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Lỗi tải dữ liệu môn học: $e'),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+            }
+          },
         );
-      }
-    });
   }
 
   /// Lấy danh sách sinh viên từ Firestore cho môn học đã chọn
@@ -121,7 +124,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       });
       return;
     }
-    
+
     try {
       await _dayDuLieuService.themDiemDayDuChoTatCaSinhVien();
       final targetMon = _selectedMonHoc.trim();
@@ -142,7 +145,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       for (var diem in diemList) {
         // Tìm xem sinh viên này thông tin gốc (Tên, Lớp) là gì
         SinhVien? svGoc = svMap[diem.maSV];
-        
+
         if (svGoc != null) {
           tempStudentData.add({
             'stt': sttCounter++,
@@ -151,7 +154,8 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
             'lop': svGoc.lop,
             'gk': diem.diemGiuaKy ?? 0.0,
             'ck': diem.diemCuoiKy ?? 0.0,
-            'hocKy': diem.hocKy ?? 0, // Thêm trường hocKy
+            'hocKyMon': diem.hocKyMon ?? 0,
+            'hocKySinhVien': diem.hocKySinhVien ?? 0,
           });
         }
       }
@@ -195,8 +199,12 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
     _controllers = {};
     for (int i = 0; i < _studentData.length; i++) {
-      double gkVal = _studentData[i]['gk'] is double ? _studentData[i]['gk'] : 0.0;
-      double ckVal = _studentData[i]['ck'] is double ? _studentData[i]['ck'] : 0.0;
+      double gkVal = _studentData[i]['gk'] is double
+          ? _studentData[i]['gk']
+          : 0.0;
+      double ckVal = _studentData[i]['ck'] is double
+          ? _studentData[i]['ck']
+          : 0.0;
 
       _controllers[i] = {
         'gk': TextEditingController(
@@ -211,16 +219,18 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
   // ==================== METHODS ====================
   void _addStudent() async {
-    setState(() => _isLoading = true); 
-    
+    setState(() => _isLoading = true);
+
     try {
       // 1. Tải danh sách Lớp và Học kỳ từ Firebase
       List<Lop> activeLops = await _adminService.getDanhSachLop();
       List<HocKy> activeHocKys = await _adminService.getDanhSachHocKy();
-      
+
       //  THÊM DÒNG PRINT NÀY ĐỂ DEBUG TRÊN TERMINAL
-      print("DEBUG: Tìm thấy ${activeLops.length} lớp và ${activeHocKys.length} học kỳ trên Firebase.");
-      
+      print(
+        "DEBUG: Tìm thấy ${activeLops.length} lớp và ${activeHocKys.length} học kỳ trên Firebase.",
+      );
+
       setState(() => _isLoading = false);
 
       if (!mounted) return;
@@ -229,7 +239,9 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       if (activeLops.isEmpty || activeHocKys.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Hệ thống chưa có dữ liệu Lớp hoặc Học kỳ. Vui lòng thêm nhanh trước!'),
+            content: Text(
+              'Hệ thống chưa có dữ liệu Lớp hoặc Học kỳ. Vui lòng thêm nhanh trước!',
+            ),
             backgroundColor: Colors.orange,
           ),
         );
@@ -245,32 +257,45 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
       if (result != null && mounted) {
         setState(() => _isLoading = true);
+        final int hocKySinhVien = int.tryParse(result['hocKySinhVien'] ?? '1') ?? 1;
         bool success = await _adminService.addSingleSinhVien(
           maSV: result['mssv']!,
           hoTen: result['ten']!,
           lop: result['lop']!,
+          hocKySinhVien: hocKySinhVien,
         );
 
         if (success) {
-          int inputHocKy = int.tryParse(result['hocKy']!) ?? 1;
+          int hocKyMon = 0;
+          final monSnap = await firestoreInstance
+              .collection('mon_hoc')
+              .where('maMon', isEqualTo: _selectedMonHoc)
+              .get();
+          if (monSnap.docs.isNotEmpty) {
+            hocKyMon = (monSnap.docs.first.data()['hocKy'] ?? 0) as int;
+          }
           await firestoreInstance
               .collection('diem')
               .doc('${result['mssv']}_$_selectedMonHoc')
               .set({
-            'maDiem': '${result['mssv']}_$_selectedMonHoc',
-            'maSV': result['mssv']!,
-            'maMon': _selectedMonHoc,
-            'hocKy': inputHocKy,
-            'diemGiuaKy': 0.0,
-            'diemCuoiKy': 0.0,
-            'heSoGiuaKy': 0.4,
-            'heSoCuoiKy': 0.6,
-          });
+                'maDiem': '${result['mssv']}_$_selectedMonHoc',
+                'maSV': result['mssv']!,
+                'maMon': _selectedMonHoc,
+                'hocKyMon': hocKyMon,
+                'hocKySinhVien': hocKySinhVien,
+                'diemGiuaKy': 0.0,
+                'diemCuoiKy': 0.0,
+                'heSoGiuaKy': 0.4,
+                'heSoCuoiKy': 0.6,
+              });
 
           await _loadStudentDataFromFirestore();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Thêm sinh viên thành công!'), backgroundColor: Colors.green),
+              const SnackBar(
+                content: Text('Thêm sinh viên thành công!'),
+                backgroundColor: Colors.green,
+              ),
             );
           }
         }
@@ -340,23 +365,29 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
   // Hàm xử lý kích hoạt Dialog thêm Lớp học
   void _quickAddLop() async {
-    final result = await StudentDialogs.showAddLopDialog(context); 
-    
+    final result = await StudentDialogs.showAddLopDialog(context);
+
     if (result != null && mounted) {
       setState(() => _isLoading = true);
       try {
         // Đọc dữ liệu ra an toàn theo đúng cấu trúc Map
         await _adminService.addLop(result['ID']!, result['tenlop']!);
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Đã thêm lớp thành công: ${result['tenlop']}'), backgroundColor: Colors.green),
+            SnackBar(
+              content: Text('Đã thêm lớp thành công: ${result['tenlop']}'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi thêm lớp: $e'), backgroundColor: Colors.redAccent),
+            SnackBar(
+              content: Text('Lỗi thêm lớp: $e'),
+              backgroundColor: Colors.redAccent,
+            ),
           );
         }
       } finally {
@@ -368,25 +399,31 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
   // Hàm xử lý kích hoạt Dialog thêm Học kỳ mới
   void _quickAddHocKy() async {
     final result = await StudentDialogs.showAddHocKyDialog(context);
-    
+
     if (result != null && mounted) {
       setState(() => _isLoading = true);
       try {
         await _adminService.addHocKy(
-          result['ID'], 
-          result['tenHocKy'], 
-          result['value']
+          result['ID'],
+          result['tenHocKy'],
+          result['value'],
         );
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Đã thêm học kỳ thành công: ${result['tenHocKy']}'), backgroundColor: Colors.green),
+            SnackBar(
+              content: Text('Đã thêm học kỳ thành công: ${result['tenHocKy']}'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi thêm học kỳ: $e'), backgroundColor: Colors.redAccent),
+            SnackBar(
+              content: Text('Lỗi thêm học kỳ: $e'),
+              backgroundColor: Colors.redAccent,
+            ),
           );
         }
       } finally {
@@ -398,11 +435,13 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
   void _updateScore(int index, String field, String value) {
     setState(() {
       if (field == 'gk') {
-        _studentData[index]['gk'] =
-            value.isEmpty ? 0.0 : double.tryParse(value) ?? 0.0;
+        _studentData[index]['gk'] = value.isEmpty
+            ? 0.0
+            : double.tryParse(value) ?? 0.0;
       } else if (field == 'ck') {
-        _studentData[index]['ck'] =
-            value.isEmpty ? 0.0 : double.tryParse(value) ?? 0.0;
+        _studentData[index]['ck'] = value.isEmpty
+            ? 0.0
+            : double.tryParse(value) ?? 0.0;
       }
     });
   }
@@ -414,21 +453,28 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
       for (int i = 0; i < _studentData.length; i++) {
         var student = _studentData[i];
-        double gk = double.tryParse(_controllers[i]?['gk']?.text ?? '') ?? (student['gk'] as double);
-        double ck = double.tryParse(_controllers[i]?['ck']?.text ?? '') ?? (student['ck'] as double);
+        double gk =
+            double.tryParse(_controllers[i]?['gk']?.text ?? '') ??
+            (student['gk'] as double);
+        double ck =
+            double.tryParse(_controllers[i]?['ck']?.text ?? '') ??
+            (student['ck'] as double);
 
         // Chỉ đưa vào danh sách nếu có nhập điểm lớn hơn 0
         if (gk > 0 || ck > 0) {
-          diemList.add(Diem(
-            maDiem: '${student['mssv']}_$_selectedMonHoc',
-            maSV: student['mssv'] as String,
-            maMon: _selectedMonHoc,
-            hocKy: student['hocKy'] ?? 1,
-            diemGiuaKy: gk,
-            diemCuoiKy: ck,
-            heSoGiuaKy: 0.4,
-            heSoCuoiKy: 0.6,
-          ));
+          diemList.add(
+            Diem(
+              maDiem: '${student['mssv']}_$_selectedMonHoc',
+              maSV: student['mssv'] as String,
+              maMon: _selectedMonHoc,
+              hocKyMon: (student['hocKyMon'] as int?) ?? 1,
+              hocKySinhVien: (student['hocKySinhVien'] as int?) ?? 1,
+              diemGiuaKy: gk,
+              diemCuoiKy: ck,
+              heSoGiuaKy: 0.4,
+              heSoCuoiKy: 0.6,
+            ),
+          );
         }
       }
 
@@ -447,7 +493,9 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lưu ${diemList.length} điểm thành công vào Firebase!'),
+            content: Text(
+              'Lưu ${diemList.length} điểm thành công vào Firebase!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -461,10 +509,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi: $e'),
-          backgroundColor: Colors.redAccent,
-        ),
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.redAccent),
       );
     }
   }
@@ -505,9 +550,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
               children: [
                 TopBarWidget(isDesktop: isDesktop),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: _buildMainContent(),
-                  ),
+                  child: SingleChildScrollView(child: _buildMainContent()),
                 ),
               ],
             ),
@@ -523,7 +566,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
           PageHeaderWidget(
             onAddStudent: _addStudent,
             onSaveAll: _saveAllScores,
-            onQuickAddLop: _quickAddLop,  
+            onQuickAddLop: _quickAddLop,
             onQuickAddHocKy: _quickAddHocKy,
           ),
           const SizedBox(height: 24),

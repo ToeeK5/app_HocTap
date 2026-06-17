@@ -19,6 +19,7 @@ class AdminService {
     required String maSV,
     required String hoTen,
     required String lop,
+    required int hocKySinhVien,
     String? email,
     String? sdt,
   }) async {
@@ -40,6 +41,7 @@ class AdminService {
         'maSV': maSV,
         'hoTen': hoTen,
         'lop': lop,
+        'hocKySinhVien': hocKySinhVien,
         'email': email ?? '',
         'sdt': sdt ?? '',
         'createdAt': FieldValue.serverTimestamp(),

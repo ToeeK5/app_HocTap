@@ -36,7 +36,8 @@ class DiemService {
           maDiem: data["maDiem"] ?? doc.id,
           maSV: data["maSV"] ?? "",
           maMon: data["maMon"] ?? "",
-          hocKy: data["hocKy"] ?? 1,
+          hocKyMon: data["hocKyMon"] ?? 1,
+          hocKySinhVien: data["hocKySinhVien"] ?? 1,
           diemGiuaKy: (data["diemGiuaKy"] ?? 0).toDouble(),
           diemCuoiKy: (data["diemCuoiKy"] ?? 0).toDouble(),
           heSoGiuaKy: (data["heSoGiuaKy"] ?? 0.4).toDouble(),
@@ -44,14 +45,14 @@ class DiemService {
         );
 
         final monHoc = await timMonHocTheoMa(diem.maMon);
-        final hocKy = await timHocKyTheoMa(diem.hocKy);
+        final hocKy = await timHocKyTheoMa(diem.hocKyMon);
 
         if (monHoc != null) {
           dsKetQua.add(
             DiemMonHienThi(
               diem: diem,
               monHoc: monHoc,
-              hocKy: hocKy ?? HocKy(id: diem.hocKy.toString(), tenHocKy: "Học kỳ ${diem.hocKy}", value: diem.hocKy),
+              hocKy: hocKy ?? HocKy(id: diem.hocKyMon.toString(), tenHocKy: "Học kỳ ${diem.hocKyMon}", value: diem.hocKyMon),
               diemTongKet: tinhDiemTongKet(diem),
             ),
           );
@@ -66,12 +67,11 @@ class DiemService {
 
   Future<MonHoc?> timMonHocTheoMa(String maMon) async {
     try {
-      final doc = await _db.collection("mon_hoc").doc(maMon).get();
-
-      if (!doc.exists) return null;
-
-      final data = doc.data()!;
-
+      // Đổi từ .doc(maMon) sang .where("maMon", isEqualTo: maMon)
+      final snap = await _db.collection("mon_hoc").where("maMon", isEqualTo: maMon).get();
+      if (snap.docs.isEmpty) return null;
+      
+      final data = snap.docs.first.data();
       return MonHoc(
         maMon: data["maMon"] ?? "",
         tenMon: data["tenMon"] ?? "",
@@ -85,14 +85,13 @@ class DiemService {
 
   Future<HocKy?> timHocKyTheoMa(int maHocKy) async {
     try {
-      final doc = await _db.collection("hoc_ky").doc(maHocKy.toString()).get();
+      // Tìm tài liệu có trường value hoặc id tương ứng thay vì ép ID Document
+      final snap = await _db.collection("hoc_ky").where("value", isEqualTo: maHocKy).get();
+      if (snap.docs.isEmpty) return null;
 
-      if (!doc.exists) return null;
-
-      final data = doc.data()!;
-
+      final data = snap.docs.first.data();
       return HocKy(
-        id: data["ID"] ?? "",
+        id: data["ID"] ?? snap.docs.first.id, // Lưu ý hoa/thường chữ 'id' hay 'ID' của bạn trên DB
         tenHocKy: data["tenHocKy"] ?? "",
         value: data["value"] ?? 0,
       );

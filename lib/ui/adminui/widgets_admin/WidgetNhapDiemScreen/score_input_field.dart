@@ -48,7 +48,8 @@ class StudentTableRow {
   final double gk;
   final double ck;
   final String lop;
-  final int hocKy;
+  final int hocKyMon;
+  final int hocKySinhVien;
   final TextEditingController gkController;
   final TextEditingController ckController;
   final Function(int, String, String) onUpdateScore;
@@ -63,7 +64,8 @@ class StudentTableRow {
     required this.gk,
     required this.ck,
     required this.lop,
-    required this.hocKy,
+    required this.hocKyMon,
+    required this.hocKySinhVien,
     required this.gkController,
     required this.ckController,
     required this.onUpdateScore,
@@ -107,7 +109,14 @@ class StudentTableRow {
         // Học kỳ
         DataCell(
           Text(
-            'HK$hocKy',
+            'HK$hocKySinhVien',
+            style: const TextStyle(fontSize: 12),
+          ),
+        ),
+        // Học kỳ
+        DataCell(
+          Text(
+            'HK$hocKyMon',
             style: const TextStyle(fontSize: 12),
           ),
         ),

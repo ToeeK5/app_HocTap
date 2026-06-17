@@ -42,7 +42,7 @@ class DayDuLieuFirestoreService {
         'maDiem': d.maDiem,
         'maSV': d.maSV,
         'maMon': d.maMon,
-        'hocKy': d.hocKy,
+        'hocKyMon': d.hocKyMon,
         'diemGiuaKy': d.diemGiuaKy,
         'diemCuoiKy': d.diemCuoiKy,
         'heSoGiuaKy': d.heSoGiuaKy,
@@ -92,6 +92,10 @@ class DayDuLieuFirestoreService {
       for (var mon in AppData.danhSachMonHoc) mon.maMon: mon.hocKy
     };
 
+    final Map<String, int> mapHocKyCuaSinhVien = {
+      for (var sv in AppData.danhSachSinhVien) sv.maSV: sv.hocKyHienTai
+    };
+
     int dem = 1;
 
     for (final maSV in danhSachMaSV) {
@@ -100,12 +104,14 @@ class DayDuLieuFirestoreService {
         final diemCK = 5.5 + (dem % 4);
 
         final int hocKyChinhXac = mapHocKyCuaMon[maMon] ?? 1;
+        final int hocKySinhVien = mapHocKyCuaSinhVien[maSV] ?? 1;
 
         batch.set(db.collection('diem').doc('${maSV}_$maMon'), {
           'maDiem': 'D${dem.toString().padLeft(3, '0')}',
           'maSV': maSV,
           'maMon': maMon,
-          'hocKy': hocKyChinhXac, 
+          'hocKyMon': hocKyChinhXac, 
+          'hocKySinhVien': hocKySinhVien, 
           'diemGiuaKy': diemGK,
           'diemCuoiKy': diemCK,
           'heSoGiuaKy': 0.4,
@@ -134,6 +140,9 @@ class DayDuLieuFirestoreService {
     final Map<String, int> mapHocKyCuaMon = {
       for (var mon in AppData.danhSachMonHoc) mon.maMon: mon.hocKy
     };
+    final Map<String, int> mapHocKyCuaSinhVien = {
+      for (var sv in AppData.danhSachSinhVien) sv.maSV: sv.hocKyHienTai
+    };
 
     int dem = 100;
 
@@ -142,13 +151,14 @@ class DayDuLieuFirestoreService {
         dem++;
 
         final int hocKyChinhXac = mapHocKyCuaMon[maMon] ?? 1;
-
+        final int hocKySinhVien = mapHocKyCuaSinhVien[maSV] ?? 1;
 
         batch.set(db.collection('diem').doc('${maSV}_$maMon'), {
           'maDiem': 'D$dem',
           'maSV': maSV,
           'maMon': maMon,
-          'hocKy': hocKyChinhXac, // 🌟 Đã bổ sung trường hocKy
+          'hocKyMon': hocKyChinhXac, 
+          'hocKySinhVien': hocKySinhVien,
           'diemGiuaKy': 6 + (dem % 4),
           'diemCuoiKy': 6.5 + (dem % 3),
           'heSoGiuaKy': 0.4,
