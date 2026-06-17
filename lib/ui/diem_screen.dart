@@ -6,6 +6,8 @@ import '../utils/tinh_toan_hoc_tap.dart';
 import '../utils/theme_app.dart';
 import '../widgets/bottom_nav_app.dart';
 import '../utils/mau_hoc_tap.dart';
+import '../widgets/comment_section.dart';
+
 
 class DiemScreen extends StatefulWidget {
   const DiemScreen({super.key});
@@ -19,7 +21,7 @@ class _DiemScreenState extends State<DiemScreen> {
   late Future<List<DiemMonHienThi>> futureDiem;
   double diemLoc = 0;
   bool sapXepCaoXuongThap = true;
-
+  int? hocKyLoc;
   @override
   void initState() {
     super.initState();
@@ -53,7 +55,6 @@ class _DiemScreenState extends State<DiemScreen> {
                 color: ThemeApp.chuDam,
               ),
             ),
-             
           ],
         ),
       ),
@@ -70,6 +71,8 @@ class _DiemScreenState extends State<DiemScreen> {
             }
 
             final dsGoc = snapshot.data!;
+            print(dsGoc.map((e) => e.diem.hocKySinhVien).toList());
+            print(dsGoc.map((e) => e.monHoc.hocKy).toList());
             final tuKhoa = timController.text.toLowerCase();
 
             final dsDiem = dsGoc.where((item) {
@@ -77,10 +80,14 @@ class _DiemScreenState extends State<DiemScreen> {
               final ma = item.monHoc.maMon.toLowerCase();
               final dungTimKiem = ten.contains(tuKhoa) || ma.contains(tuKhoa);
               final dungDiemLoc = item.diemTongKet >= diemLoc;
-
-              return dungTimKiem && dungDiemLoc;
+              //
+              final dungHocKy =
+    hocKyLoc == null ||
+    item.monHoc.hocKy == hocKyLoc;
+              //
+              return dungTimKiem && dungDiemLoc && dungHocKy;
             }).toList();
-
+  
             dsDiem.sort((a, b) {
               if (sapXepCaoXuongThap) {
                 return b.diemTongKet.compareTo(a.diemTongKet);
@@ -90,6 +97,12 @@ class _DiemScreenState extends State<DiemScreen> {
             });
             final tongTin = TinhToanHocTap.tinhTongTin(dsGoc);
             final gpa10 = TinhToanHocTap.tinhGPAHe10(dsGoc);
+            final dsHocKy =
+    dsGoc
+        .map((e) => e.monHoc.hocKy)
+        .toSet()
+        .toList()
+      ..sort();
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -146,11 +159,13 @@ class _DiemScreenState extends State<DiemScreen> {
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: ThemeApp.mauVien),
                     ),
+
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           "Bộ lọc điểm",
+
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: ThemeApp.chuDam,
@@ -187,6 +202,37 @@ class _DiemScreenState extends State<DiemScreen> {
                           onChanged: (value) {
                             setState(() {
                               diemLoc = value ?? 0;
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        DropdownButtonFormField<int>(
+  value: hocKyLoc ?? -1,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color(0xffF8FCFF),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          items: [
+                            const DropdownMenuItem<int>(
+                              value: -1,
+                              child: Text("Tất cả học kỳ"),
+                            ),
+                            ...dsHocKy.map(
+                              (hk) => DropdownMenuItem<int>(
+                                value: hk,
+                                child: Text("Học kỳ $hk"),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              hocKyLoc = value == -1 ? null : value;
                             });
                           },
                         ),
@@ -422,8 +468,15 @@ class _DiemScreenState extends State<DiemScreen> {
               Expanded(
                 child: _oDiem("Tổng", item.diemTongKet.toStringAsFixed(1)),
               ),
+              
             ],
+            
           ),
+          const SizedBox(height: 14),
+
+CommentSection(
+  maMon: item.monHoc.maMon,
+),
         ],
       ),
     );
