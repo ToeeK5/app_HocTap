@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../adminui/nhapmon_screen.dart'; 
 import '../adminui/nhapdiem_screen.dart'; 
+import '../adminui/bao_cao_thong_ke_screen.dart';
 import '../login_screen.dart'; 
 
 
@@ -32,7 +33,7 @@ class _AdminScreenState extends State<AdminScreen> {
     _pages = [
       const NhapMonScreen(), // Trang Nhập danh sách môn học (Index 0)
       const NhapDiemScreen(), // Trang Nhập điểm sinh viên (Index 1)
-      const Center(child: Text('Báo cáo thống kê')), // Trang Báo cáo thống kê (Index 2 - giả định)
+      const BaoCaoThongKeScreen(), // Trang Báo cáo thống kê (Index 2 - giả định)
       const Center(child: Text('Cài đặt hệ thống')), // Trang Cài đặt hệ
       const LoginScreen(), // Trang Đăng xuất (Index 4 - giả định)
     ];
@@ -218,7 +219,7 @@ class _AdminScreenState extends State<AdminScreen> {
             return;
           }
           // Chỉ chuyển trang cho các tab có view thực tế (0 và 1)
-          if (index < 2) {
+          if (index < 3) {
             setState(() {
               _selectedIndex = index;
             });

@@ -29,6 +29,7 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
 
   late List<Map<String, dynamic>> _studentData;
   late Map<int, Map<String, TextEditingController>> _controllers;
+  List<SinhVien> _selectedStudents = [];
   bool _isLoading = true;
 
   // ⭐ THÊM: Subscription để lắng nghe danh sách môn học
@@ -309,6 +310,385 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
     }
   }
 
+  /// ✅ THÊM MỚI: Chọn sinh viên từ danh sách có sẵn
+  Future<void> _selectExistingStudent() async {
+    if (_selectedMonHoc.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn môn học trước!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final svSnap = await firestoreInstance.collection('sinh_vien').get();
+
+      List<SinhVien> danhSachSinhVien = svSnap.docs
+          .map((doc) => SinhVien.fromFirestore(doc.data()))
+          .toList();
+
+      final diemSnap = await firestoreInstance
+          .collection('diem')
+          .where('maMon', isEqualTo: _selectedMonHoc)
+          .get();
+
+      Set<String> maSVDaCoScore = {};
+
+      for (var doc in diemSnap.docs) {
+        maSVDaCoScore.add(doc['maSV'] ?? '');
+      }
+
+      List<SinhVien> danhSachSinhVienConLai = danhSachSinhVien
+          .where((sv) => !maSVDaCoScore.contains(sv.maSV))
+          .toList();
+
+      setState(() => _isLoading = false);
+
+      if (danhSachSinhVienConLai.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tất cả sinh viên đã có điểm môn này!'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      final selectedStudents = await showDialog<List<SinhVien>>(
+        context: context,
+        builder: (context) => _buildSelectStudentDialog(danhSachSinhVienConLai),
+      );
+
+      if (selectedStudents == null || selectedStudents.isEmpty) return;
+
+      setState(() => _isLoading = true);
+
+      try {
+        int hocKyMon = 0;
+
+        final monSnap = await firestoreInstance
+            .collection('mon_hoc')
+            .where('maMon', isEqualTo: _selectedMonHoc)
+            .get();
+
+        if (monSnap.docs.isNotEmpty) {
+          hocKyMon = monSnap.docs.first['hocKy'] ?? 0;
+        }
+
+        WriteBatch batch = firestoreInstance.batch();
+
+        for (var sv in selectedStudents) {
+          final svDoc = await firestoreInstance
+              .collection('sinh_vien')
+              .doc(sv.maSV)
+              .get();
+
+          int hocKySinhVien = (svDoc.data()?['hocKySinhVien'] ?? 1) as int;
+
+          final diemRef = firestoreInstance
+              .collection('diem')
+              .doc('${sv.maSV}_$_selectedMonHoc');
+
+          batch.set(diemRef, {
+            'maDiem': '${sv.maSV}_$_selectedMonHoc',
+            'maSV': sv.maSV,
+            'maMon': _selectedMonHoc,
+            'hocKyMon': hocKyMon,
+            'hocKySinhVien': hocKySinhVien,
+            'diemGiuaKy': 0.0,
+            'diemCuoiKy': 0.0,
+            'heSoGiuaKy': 0.4,
+            'heSoCuoiKy': 0.6,
+          });
+        }
+
+        await batch.commit();
+
+        await _loadStudentDataFromFirestore();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Đã thêm ${selectedStudents.length} sinh viên thành công!',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        );
+      } finally {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi tải danh sách: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// ✅ THÊM MỚI: Dialog chọn sinh viên từ danh sách
+  Widget _buildSelectStudentDialog(List<SinhVien> danhSach) {
+    return StatefulBuilder(
+      builder: (context, setDialogState) {
+        bool isAllSelected =
+            danhSach.isNotEmpty && _selectedStudents.length == danhSach.length;
+
+        return Dialog(
+          child: Container(
+            width: 1000,
+            height: 600,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Chọn sinh viên để thêm vào môn học',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Checkbox(
+                      value: isAllSelected,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          if (value == true) {
+                            _selectedStudents = List.from(danhSach);
+                          } else {
+                            _selectedStudents.clear();
+                          }
+                        });
+                      },
+                    ),
+                    const Text(
+                      'Chọn tất cả',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+
+                    const Spacer(),
+
+                    Text(
+                      'Đã chọn: ${_selectedStudents.length}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SingleChildScrollView(
+                      child: DataTable(
+                        showCheckboxColumn: true,
+                        columnSpacing: 20,
+                        horizontalMargin: 12,
+                        dataRowHeight: 56,
+                        headingRowHeight: 56,
+                        headingRowColor: WidgetStateProperty.all(
+                          const Color(0xFFF7F9FF),
+                        ),
+                        border: TableBorder.all(
+                          color: Colors.grey.shade300,
+                          width: 1,
+                        ),
+                        columns: const [
+                          DataColumn(
+                            label: SizedBox(
+                              width: 90,
+                              child: Text(
+                                'MSSV',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: SizedBox(
+                              width: 180,
+                              child: Text(
+                                'Họ và Tên',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: SizedBox(
+                              width: 100,
+                              child: Text(
+                                'Lớp',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: SizedBox(
+                              width: 100,
+                              child: Text(
+                                'Học Kỳ',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: SizedBox(
+                              width: 250,
+                              child: Text(
+                                'Email',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        rows: danhSach.map((sv) {
+                          bool isSelected = _selectedStudents.any(
+                            (item) => item.maSV == sv.maSV,
+                          );
+
+                          return DataRow(
+                            selected: isSelected,
+                            onSelectChanged: (selected) {
+                              setDialogState(() {
+                                if (selected == true) {
+                                  if (!isSelected) {
+                                    _selectedStudents.add(sv);
+                                  }
+                                } else {
+                                  _selectedStudents.removeWhere(
+                                    (item) => item.maSV == sv.maSV,
+                                  );
+                                }
+                              });
+                            },
+                            cells: [
+                              DataCell(
+                                SizedBox(
+                                  width: 90,
+                                  child: Text(
+                                    sv.maSV,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              ),
+
+                              DataCell(
+                                SizedBox(
+                                  width: 180,
+                                  child: Text(
+                                    sv.hoTen,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              ),
+
+                              DataCell(
+                                SizedBox(
+                                  width: 100,
+                                  child: Text(
+                                    sv.lop,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              ),
+
+                              DataCell(
+                                SizedBox(
+                                  width: 100,
+                                  child: Center(
+                                    child: Text(
+                                      sv.hocKyHienTai.toString(),
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              DataCell(
+                                SizedBox(
+                                  width: 250,
+                                  child: Text(
+                                    sv.email ?? '-',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: const Icon(Icons.close),
+                      label: const Text('Đóng'),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    ElevatedButton.icon(
+                      onPressed: _selectedStudents.isEmpty
+                          ? null
+                          : () {
+                              Navigator.pop(context, _selectedStudents);
+                            },
+                      icon: const Icon(Icons.add),
+                      label: Text('Thêm (${_selectedStudents.length})'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _deleteStudent(int index) async {
     final confirmed = await StudentDialogs.showDeleteConfirmDialog(context);
     if (confirmed == true && mounted) {
@@ -578,11 +958,32 @@ class _NhapDiemScreenState extends State<NhapDiemScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          PageHeaderWidget(
-            onAddStudent: _addStudent,
-            onSaveAll: _saveAllScores,
-            onQuickAddLop: _quickAddLop,
-            onQuickAddHocKy: _quickAddHocKy,
+          // Row chứa 2 nút: Thêm sinh viên mới + Chọn sinh viên có sẵn
+          Row(
+            children: [
+              Expanded(
+                child: PageHeaderWidget(
+                  onAddStudent: _addStudent,
+                  onSaveAll: _saveAllScores,
+                  onQuickAddLop: _quickAddLop,
+                  onQuickAddHocKy: _quickAddHocKy,
+                ),
+              ),
+              const SizedBox(width: 16),
+              // ✅ THÊM MỚI: Nút chọn sinh viên có sẵn
+              ElevatedButton.icon(
+                onPressed: _selectExistingStudent,
+                icon: const Icon(Icons.person_add),
+                label: const Text('Chọn SV có sẵn'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00AA66),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           FilterAndStatsWidget(
