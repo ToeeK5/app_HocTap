@@ -104,38 +104,47 @@ class _NhapMonScreenState extends State<NhapMonScreen> {
   void _deleteMonHoc(MonHoc monHoc) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Xác nhận xóa'),
         content: Text(
           "Bạn có chắc chắn muốn xóa môn học '${monHoc.tenMon}' khỏi hệ thống không? Hành động này không thể hoàn tác.",
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Hủy'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              setState(() => _isLoading = true);
+              // ✅ SỬA: Đóng dialog TRƯỚC khi thực hiện delete
+              Navigator.pop(dialogContext);
+              
+              // ✅ SỬA: Gọi setState với context của State (self), không phải dialog context
+              if (mounted) {
+                setState(() => _isLoading = true);
+              }
+
               try {
                 await FirebaseFirestore.instance
                     .collection('mon_hoc')
                     .doc(monHoc.maMon)
                     .delete();
 
+                // ✅ SỬA: Reload danh sách sau khi delete xong
+                await _loadDanhSachMonHoc();
+
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Xóa môn học thành công!')),
                   );
                 }
-                _loadDanhSachMonHoc();
               } catch (e) {
-                setState(() => _isLoading = false);
+                print('Lỗi xóa môn học: $e');
                 if (mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Xóa thất bại: $e')));
+                  setState(() => _isLoading = false);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Xóa thất bại: $e')),
+                  );
                 }
               }
             },
